@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # 1. The Frontend
+  frontend:
+    build: ./clipbox-frontend
+    ports:
+      - "3000:3000"
+    # This keeps the container running in dev mode
+    stdin_open: true
+    tty: true
+
+  # 2. The API
+  api:
+    build: ./clipbox-backend
+    command: npm run api
+    ports:
+      - "4000:4000"
+    volumes:
+      # This links your local folders to the container
+      # so your code auto-updates.
+      - ./clipbox-backend:/app
+      # This 'named volume' persists node_modules
+      - backend-modules:/app/node_modules
+    depends_on:
+      - redis
+
+  # 3. The Worker
+  worker:
+    build: ./clipbox-backend
+    command: npm run worker
+    volumes:
+      # Link code for auto-updates
+      - ./clipbox-backend:/app
+      - backend-modules:/app/node_modules
+    depends_on:
+      - redis
+
+  # 4. The Database
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+
+# Define the named volume
+volumes:
+  backend-modules:
