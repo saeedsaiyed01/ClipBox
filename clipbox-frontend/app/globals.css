@@ -78,7 +78,7 @@
   grid-template-columns: minmax(280px, 320px) 1fr minmax(280px, 360px);
   height: 100vh;
   gap: 1.5rem;
-  padding: 1.5rem;
+  padding: 0;
   box-sizing: border-box;
   max-width: 100vw;
   overflow: hidden;
@@ -89,7 +89,7 @@
   .app-layout {
     grid-template-columns: 320px 1fr 360px;
     gap: 2rem;
-    padding: 2rem;
+    padding: 0;
   }
 }
 
@@ -98,7 +98,7 @@
   .app-layout {
     grid-template-columns: 360px 1fr 400px;
     gap: 2.5rem;
-    padding: 2.5rem;
+    padding: 0;
   }
 }
 
@@ -107,7 +107,7 @@
   .app-layout {
     grid-template-columns: minmax(240px, 280px) 1fr minmax(260px, 320px);
     gap: 1.25rem;
-    padding: 1.25rem;
+    padding: 0;
   }
 }
 
@@ -116,7 +116,7 @@
   .app-layout {
     grid-template-columns: minmax(220px, 260px) 1fr minmax(240px, 300px);
     gap: 1rem;
-    padding: 1rem;
+    padding: 0;
   }
 }
 
@@ -125,7 +125,7 @@
   .app-layout {
     grid-template-columns: minmax(180px, 220px) 1fr minmax(200px, 260px);
     gap: 0.75rem;
-    padding: 0.75rem;
+    padding: 0;
   }
 }
 
@@ -134,7 +134,7 @@
   .app-layout {
     grid-template-columns: minmax(140px, 180px) 1fr minmax(160px, 220px);
     gap: 0.5rem;
-    padding: 0.5rem;
+    padding: 0;
   }
 
   .panel {
@@ -157,7 +157,7 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
     gap: 0.5rem;
-    padding: 0.5rem;
+    padding: 0;
     height: 100vh;
     overflow: hidden;
   }
@@ -242,7 +242,7 @@
     grid-template-columns: minmax(120px, 160px) 1fr minmax(140px, 180px);
     grid-template-rows: 1fr;
     gap: 0.5rem;
-    padding: 0.5rem;
+    padding: 0;
     height: 100vh;
   }
 
@@ -315,7 +315,7 @@
 /* Extra small screens (320px and below) */
 @media (max-width: 375px) {
   .app-layout {
-    padding: 0.25rem;
+    padding: 0;
     gap: 0.25rem;
   }
 
@@ -338,9 +338,9 @@
 }
 
 .panel {
-  background: var(--bg-primary);
+  background: #0E0E0E;
   border: 1px solid var(--border-light);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 1.5rem;
   overflow-y: auto;
   overflow-x: hidden;

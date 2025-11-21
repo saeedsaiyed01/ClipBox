@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
+    "start": "tsx src/server.ts & tsx src/worker.ts",
     "worker": "tsx src/worker.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
