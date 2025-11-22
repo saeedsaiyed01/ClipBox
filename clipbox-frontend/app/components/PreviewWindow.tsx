@@ -27,10 +27,13 @@ export default function PreviewWindow({ settings, videoPreviewUrl }: { settings:
     >
       <div
         className="preview-canvas"
-        // 2. Set the background (solid or gradient)
+        // 2. Set the background (solid, gradient, or image)
         style={{
-          // This works for both "linear-gradient(...)" and "#FFFFFF"
-          background: background.value,
+          background: background.type === 'image'
+            ? `url(${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}${background.value})`
+            : background.value,
+          backgroundSize: background.type === 'image' ? 'cover' : undefined,
+          backgroundPosition: background.type === 'image' ? 'center' : undefined,
         }}
       >
         <video

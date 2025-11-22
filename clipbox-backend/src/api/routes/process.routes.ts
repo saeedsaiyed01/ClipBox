@@ -42,8 +42,33 @@ const upload = multer({
   }
 });
 
+// Image upload configuration
+const imageUpload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5000000 // 5MB for images
+  },
+  fileFilter: (req, file, cb) => {
+    // Basic validation: only image files
+    if (!file.mimetype.startsWith('image/')) {
+      logger.warn('Rejected non-image file upload', { mimetype: file.mimetype, filename: file.originalname });
+      cb(new Error('Only image files are allowed'));
+      return;
+    }
+    cb(null, true);
+  }
+});
+
 // Define the routes
 router.post('/process', upload.single('video'), processVideo);
+router.post('/upload-image', imageUpload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image file provided' });
+  }
+  // Return the file path or URL
+  const imageUrl = `/uploads/${req.file.filename}`;
+  res.json({ imageUrl });
+});
 router.get('/status/:jobId', getJobStatus);
 
 export default router;

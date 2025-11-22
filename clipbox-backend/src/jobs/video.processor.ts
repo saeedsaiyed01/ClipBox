@@ -57,6 +57,10 @@ export const processVideoJob = (job: Job<VideoJobData>): Promise<string> => {
     const x1 = type === 1 ? canvasW : 0;
     const y1 = type === 0 ? canvasH : 0;
     filterComplex.push(`gradients=s=${canvasW}x${canvasH}:c0=${c0}:c1=${c1}:x0=0:y0=0:x1=${x1}:y1=${y1}[bg];`);
+  } else if (background.type === 'image') {
+    // Use the uploaded image as background
+    const imagePath = path.resolve(background.value.replace('/uploads/', 'uploads/')).replace(/\\/g, '/');
+    filterComplex.push(`[1:v]scale=${canvasW}:${canvasH}:force_original_aspect_ratio=decrease,pad=${canvasW}:${canvasH}:(ow-iw)/2:(oh-ih)/2[bg];`);
   } else {
     filterComplex.push(`color=color=black:size=${canvasW}x${canvasH}[bg];`);
   }
@@ -90,8 +94,16 @@ export const processVideoJob = (job: Job<VideoJobData>): Promise<string> => {
     `[bg]${videoStream}overlay=x=${overlayX}:y=${overlayY}[outv]`
   );
 
-  const ffmpegArgs: string[] = [
-    '-i', safeInputPath,
+  const ffmpegArgs: string[] = [];
+
+  if (background.type === 'image') {
+    const imagePath = path.resolve(background.value.replace('/uploads/', 'uploads/')).replace(/\\/g, '/');
+    ffmpegArgs.push('-i', safeInputPath, '-i', imagePath);
+  } else {
+    ffmpegArgs.push('-i', safeInputPath);
+  }
+
+  ffmpegArgs.push(
     '-filter_complex', filterComplex.join(''),
     '-map', '[outv]',
     '-map', '0:a?',
@@ -104,7 +116,7 @@ export const processVideoJob = (job: Job<VideoJobData>): Promise<string> => {
     '-t', '30',  // Limit to 30 seconds for testing
     '-y',
     safeOutputPath
-  ];
+  );
 
   return new Promise((resolve, reject) => {
     logger.info(`Starting FFmpeg processing`, {

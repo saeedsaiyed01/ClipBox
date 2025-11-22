@@ -33,10 +33,30 @@ export const startProcessing = async (
  */
 export const checkJobStatus = async (jobId: string): Promise<ApiStatusResponse> => {
   const response = await fetch(`${API_BASE_URL}/status/${jobId}`);
-  
+
   if (!response.ok) {
     throw new Error('Failed to check job status.');
   }
 
   return response.json() as Promise<ApiStatusResponse>;
+};
+
+/**
+ * Uploads an image file and returns the URL.
+ */
+export const uploadImage = async (file: File): Promise<{ imageUrl: string }> => {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const response = await fetch(`${API_BASE_URL}/upload-image`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Failed to upload image.');
+  }
+
+  return response.json() as Promise<{ imageUrl: string }>;
 };

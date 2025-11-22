@@ -1,4 +1,6 @@
 "use client";
+import React, { useState } from 'react';
+import { uploadImage } from '../lib/api';
 import { AppBackground, StudioSettings } from '../types';
 
 interface BackgroundPanelProps {
@@ -23,9 +25,31 @@ const PRESET_GRADIENTS: { name: string, value: string }[] = [
  * Renders the "Background" controls (Gradient/Solid tabs)
  */
 export default function BackgroundPanel({ settings, setSettings, disabled }: BackgroundPanelProps) {
-  
+  const [uploading, setUploading] = useState(false);
+
   const setBackground = (bg: AppBackground) => {
     setSettings({ background: bg });
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const { imageUrl } = await uploadImage(file);
+      setBackground({ type: 'image', value: imageUrl });
+    } catch (error) {
+      alert('Failed to upload image. Please try again.');
+      console.error('Image upload error:', error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -49,9 +73,9 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
           Solid
         </button>
         <button
-          className={`btn-toggle`}
-          onClick={() => alert('Image backgrounds coming soon!')} // Placeholder
-          disabled={disabled || true} // Disabled for now
+          className={`btn-toggle ${settings.background.type === 'image' ? 'active' : ''}`}
+          onClick={() => setBackground({ type: 'image', value: '' })}
+          disabled={disabled}
         >
           Image
         </button>
@@ -74,13 +98,39 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
       
       {/* --- Solid Color Panel --- */}
       {settings.background.type === 'solid' && (
-        <input 
-          type="color" 
+        <input
+          type="color"
           className="color-picker"
           value={settings.background.value}
           onChange={(e) => setBackground({ type: 'solid', value: e.target.value })}
           disabled={disabled}
         />
+      )}
+
+      {/* --- Image Upload Panel --- */}
+      {settings.background.type === 'image' && (
+        <div className="image-upload-panel">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            disabled={disabled || uploading}
+            className="file-input"
+            id="image-upload"
+          />
+          <label htmlFor="image-upload" className="file-label">
+            {uploading ? 'Uploading...' : 'Choose Image'}
+          </label>
+          {settings.background.value && (
+            <div className="image-preview">
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}${settings.background.value}`}
+                alt="Background preview"
+                style={{ maxWidth: '100%', maxHeight: '100px', borderRadius: '4px' }}
+              />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
