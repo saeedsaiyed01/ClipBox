@@ -269,22 +269,12 @@ export default function Studio() {
     <div className="min-h-screen bg-[#09090b] text-white">
       <div className="mx-auto flex max-w-[2000px] flex-col lg:grid lg:min-h-screen lg:grid-cols-[35%_65%]">
         <aside className="border-b border-white/5 px-6 py-8 lg:flex lg:flex-col lg:gap-8 lg:border-b-0 lg:border-r lg:px-10 lg:py-12">
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-lg blur opacity-30"></div>
-            <div className="relative bg-gradient-to-br from-gray-900 to-black p-6 rounded-lg border border-white/10">
-              <p className="text-xs uppercase tracking-[0.4em] text-amber-300 font-bold">Studio</p>
-              <h1 className="mt-3 text-3xl font-bold text-white bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
-                Clipbox Studio
-              </h1>
-              <p className="mt-3 text-sm text-zinc-300 leading-relaxed">
-                Shape your canvas, dial in styling, and export polished clips with professional video editing tools.
-              </p>
-              <div className="mt-4 flex gap-2">
-                <div className="h-2 w-2 bg-amber-400 rounded-full animate-pulse"></div>
-                <div className="h-2 w-2 bg-orange-400 rounded-full animate-pulse delay-75"></div>
-                <div className="h-2 w-2 bg-yellow-400 rounded-full animate-pulse delay-150"></div>
-              </div>
-            </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-zinc-600">Studio</p>
+            <h1 className="mt-3 text-3xl font-semibold text-white">Clipbox Studio</h1>
+            <p className="mt-2 text-sm text-zinc-500">
+              Shape your canvas, dial in styling, and export polished clips.
+            </p>
           </div>
 
           <div className="flex-1 space-y-6 overflow-y-auto pr-2 lg:max-h-[calc(100vh-8rem)]">
