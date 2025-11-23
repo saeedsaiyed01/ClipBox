@@ -1,5 +1,6 @@
 "use client";
 
+import { Download, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { checkJobStatus, startProcessing } from "../lib/api";
 import { ProcessStatus, StudioSettings } from "../types";
@@ -52,7 +53,7 @@ const usePolling = (
 const defaultSettings: StudioSettings = {
   background: { type: 'solid', value: '#1E293B' }, // Default solid dark blue
   aspectRatio: '16:9',
-  borderRadius: 16,
+  borderRadius: 24, // Increased for more rounded corners
   zoom: 100,
   position: { x: 0, y: 0 },
 };
@@ -178,118 +179,177 @@ export default function Studio() {
   const updateSettings = (newSettings: Partial<StudioSettings>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
   };
-  
+
+  /**
+   * Remove the current video and go back to dropzone
+   */
+  const handleRemoveVideo = () => {
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl);
+    }
+    setFile(null);
+    setVideoPreviewUrl(null);
+    setFinalUrl(null);
+    setStatus('idle');
+    setMessage('');
+    setJobId(null);
+    setProgress(0);
+  };
+
   const isProcessing = status === 'uploading' || status === 'processing';
 
   // --- Render ---
-  return (
-    <div className="app-layout">
-      
-      {/* --- Left Panel --- */}
-      <div className="panel panel-left">
-        <LayoutPanel 
-          settings={settings}
-          setSettings={updateSettings} 
-          disabled={isProcessing}
-        />
-      </div>
-
-      {/* --- Center Panel --- */}
-      <div className="panel-center">
-        {videoPreviewUrl ? (
-          // If we have a video, show the live preview
-          <PreviewWindow
-            settings={settings}
-            videoPreviewUrl={videoPreviewUrl}
-          />
-        ) : (
-          // Otherwise, show the dropzone
-          <UploadDropzone
-            onFileSelect={onFileSelect}
-            disabled={isProcessing}
-          />
-        )}
-
-        {/* Export Button Overlay - Only show when file selected and not processing */}
-        {file && !isProcessing && (
-          <div className="export-button-overlay">
-            <button
-              onClick={handleSubmit}
-              className="export-button"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              Export Video
-            </button>
+  const renderStatusContent = () => {
+    if (status === 'processing') {
+      return (
+        <>
+          <div className="flex items-center justify-between text-sm font-semibold text-zinc-300">
+            <span className="text-white">Processing video</span>
+            <span className="text-amber-300">{Math.round(progress)}%</span>
           </div>
-        )}
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/5">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-400 transition-all duration-300"
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            />
+          </div>
+          <p className="mt-3 text-xs text-zinc-500">
+            Hang tight—longer clips can take a little more time to render.
+          </p>
+        </>
+      );
+    }
 
-        {/* --- Status & Progress Bar --- */}
-        <div className="status-bar">
-          {status === 'processing' && (
-            <div className="status-card">
-              <div className="status-content">
-                <div className="progress-header">
-                  <h4>Processing Video</h4>
-                  <span className="progress-percent">{Math.round(progress)}%</span>
-                </div>
-                <div className="progress-container">
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${Math.min(progress, 100)}%` }}
-                    />
-                  </div>
-                </div>
-                <p className="progress-note">
-                  This may take a few moments depending on video length
-                </p>
-              </div>
-            </div>
-          )}
-          {status === 'uploading' && (
-            <div className="status-card">
-              <div className="status-content">
-                <div className="flex items-center space-x-4">
-                  <div className="spinner"></div>
-                  <p>{message}</p>
-                </div>
-              </div>
-            </div>
-          )}
-          {status !== 'processing' && status !== 'uploading' && message && (
-            <div className="status-card">
-              <div className="status-content">
-                <p className="text-center">{message}</p>
-              </div>
-            </div>
-          )}
+    if (status === 'uploading') {
+      return (
+        <div className="flex items-center gap-3 text-sm text-zinc-300">
+          <span className="h-3 w-3 animate-pulse rounded-full bg-amber-300" />
+          {message || 'Uploading video...'}
         </div>
+      );
+    }
 
-        {finalUrl && status === 'success' && (
-          <div className="download-corner">
-            <a href={finalUrl} download="clipbox-video.mp4" className="download-minimal" title="Download Video">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </a>
+    if (message) {
+      return (
+        <p className="text-sm text-zinc-300">
+          {message}
+        </p>
+      );
+    }
+
+    return (
+      <p className="text-sm text-zinc-500">
+        Select a video to begin editing, then export whenever you are ready.
+      </p>
+    );
+  };
+
+  const primaryAction =
+    finalUrl && status === 'success' ? (
+      <a
+        href={finalUrl}
+        download="clipbox-video.mp4"
+        className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_10px_40px_rgba(251,191,36,0.45)] transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+      >
+        <Download className="h-4 w-4" />
+        Download / Export
+      </a>
+    ) : (
+      <button
+        onClick={handleSubmit}
+        disabled={!file || isProcessing}
+        className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_10px_40px_rgba(251,191,36,0.45)] transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <Download className="h-4 w-4" />
+        Download / Export
+      </button>
+    );
+
+  return (
+    <div className="min-h-screen bg-[#09090b] text-white">
+      <div className="mx-auto flex max-w-[2000px] flex-col lg:grid lg:min-h-screen lg:grid-cols-[35%_65%]">
+        <aside className="border-b border-white/5 px-6 py-8 lg:flex lg:flex-col lg:gap-8 lg:border-b-0 lg:border-r lg:px-10 lg:py-12">
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-lg blur opacity-30"></div>
+            <div className="relative bg-gradient-to-br from-gray-900 to-black p-6 rounded-lg border border-white/10">
+              <p className="text-xs uppercase tracking-[0.4em] text-amber-300 font-bold">Studio</p>
+              <h1 className="mt-3 text-3xl font-bold text-white bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                Clipbox Studio
+              </h1>
+              <p className="mt-3 text-sm text-zinc-300 leading-relaxed">
+                Shape your canvas, dial in styling, and export polished clips with professional video editing tools.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <div className="h-2 w-2 bg-amber-400 rounded-full animate-pulse"></div>
+                <div className="h-2 w-2 bg-orange-400 rounded-full animate-pulse delay-75"></div>
+                <div className="h-2 w-2 bg-yellow-400 rounded-full animate-pulse delay-150"></div>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* --- Right Panel --- */}
-      <div className="panel panel-right">
-        <BackgroundPanel
-          settings={settings}
-          setSettings={updateSettings}
-          disabled={isProcessing}
-        />
-        <SettingsPanel
-          settings={settings}
-          setSettings={updateSettings}
-          disabled={isProcessing}
-        />
+          <div className="flex-1 space-y-6 overflow-y-auto pr-2 lg:max-h-[calc(100vh-8rem)]">
+            <LayoutPanel
+              settings={settings}
+              setSettings={updateSettings}
+              disabled={isProcessing}
+            />
+            <BackgroundPanel
+              settings={settings}
+              setSettings={updateSettings}
+              disabled={isProcessing}
+            />
+            <SettingsPanel
+              settings={settings}
+              setSettings={updateSettings}
+              disabled={isProcessing}
+            />
+          </div>
+        </aside>
+
+        <section className="relative flex min-h-[60vh] flex-col bg-zinc-950 lg:sticky lg:top-0 lg:h-screen">
+          <div className="absolute right-6 top-6 z-20">
+            {primaryAction}
+          </div>
+
+          <div className="flex flex-1 items-center justify-center px-6 py-12 lg:px-12">
+            <div className="w-full max-w-5xl">
+              {videoPreviewUrl ? (
+                <PreviewWindow
+                  settings={settings}
+                  videoPreviewUrl={videoPreviewUrl}
+                />
+              ) : (
+                <div className="rounded-[30px] border border-dashed border-white/15 bg-white/5 p-8 text-center shadow-[0_25px_90px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+                  <UploadDropzone
+                    onFileSelect={onFileSelect}
+                    disabled={isProcessing}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-white/5 bg-black/30 px-6 py-6 backdrop-blur lg:px-12">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="text-xs uppercase tracking-[0.4em] text-zinc-600">
+                Playback Toolbar
+              </div>
+              {videoPreviewUrl && (
+                <button
+                  onClick={handleRemoveVideo}
+                  className="inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-transparent px-4 py-2 text-sm font-medium text-red-300 transition hover:border-red-400 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remove Video
+                </button>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/10 bg-black/40 p-5 shadow-inner">
+              {renderStatusContent()}
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

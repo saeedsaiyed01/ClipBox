@@ -27,19 +27,19 @@
     --radius: 0.5rem;
   
     /* Clean Dark Theme */
-    --bg-primary: #0a0a0a;      /* Rich black background */
-    --bg-secondary: #1a1a1a;    /* Dark gray */
-    --bg-tertiary: #2a2a2a;     /* Card backgrounds */
-    --bg-accent: #3a3a3a;       /* Button hovers */
+    --bg-primary: #09090b;      /* Matte studio backdrop */
+    --bg-secondary: #0f0f12;    /* Canvas surround */
+    --bg-tertiary: #131318;     /* Control surfaces */
+    --bg-accent: #1c1c23;       /* Elevated elements */
 
-    --text-primary: #ffffff;    /* Pure white for main text */
-    --text-secondary: #e5e5e5;  /* Light gray for secondary text */
-    --text-muted: #a3a3a3;      /* Muted gray for labels */
-    --text-subtle: #737373;    /* Subtle gray for notes */
+    --text-primary: #f4f4f5;
+    --text-secondary: #d4d4d8;
+    --text-muted: #a1a1aa;
+    --text-subtle: #71717a;
 
-    --brand-primary: #124e78;   /* Custom blue primary */
-    --brand-secondary: #1e5f99; /* Lighter blue */
-    --brand-accent: #2d7bb6;    /* Accent blue */
+    --brand-primary: #f5c249;   /* High-contrast amber */
+    --brand-secondary: #f59e0b;
+    --brand-accent: #f97316;
 
     --success-primary: #10b981; /* Emerald green */
     --success-secondary: #059669; /* Darker emerald */
@@ -60,14 +60,15 @@
   }
 
   body {
-    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    background-color: var(--bg-primary);
     color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     margin: 0;
     padding: 0;
-    overflow: hidden;
     min-height: 100vh;
     line-height: 1.6;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 
@@ -619,10 +620,36 @@
 /* Overlay button positioning */
 .export-button-overlay {
   position: absolute;
-  top: 2rem;
+  bottom: 2rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
+}
+
+.button-group-overlay {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.remove-video-overlay-button {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.remove-video-overlay-button:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
 }
 .process-button:hover {
   background-color: var(--brand-color-hover);
@@ -633,6 +660,9 @@
   cursor: not-allowed;
 }
 
+/* PreviewWindow component now handles its own styling with inline styles and Tailwind classes */
+
+/* --- Status Bar --- */
 /* --- Preview Window (Canvas) - Always Visible --- */
 .preview-window {
   width: 100%;
@@ -653,6 +683,7 @@
   contain: layout style paint;
 }
 
+
 .preview-canvas {
   width: 100%;
   height: 100%;
@@ -666,6 +697,7 @@
   border-radius: 10px;
   /* Ensure canvas respects container bounds */
   box-sizing: border-box;
+  position: relative;
 }
 
 .preview-video {
@@ -725,50 +757,6 @@
   .preview-video {
     border-radius: 2px;
   }
-}
-
-/* --- Dropzone --- */
-.dropzone {
-  width: 100%;
-  height: 100%;
-  min-height: 400px;
-  border: 2px dashed var(--bg-dark-3);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
-  background-color: rgba(15, 23, 42, 0.5); /* Slight background for dropzone */
-}
-.dropzone.dragging {
-  border-color: var(--brand-color);
-  background-color: rgba(99, 102, 241, 0.1);
-}
-.file-input {
-  display: none;
-}
-.file-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  cursor: pointer;
-  text-align: center;
-  padding: 2rem;
-}
-.file-label svg {
-  fill: var(--text-muted);
-  margin-bottom: 1rem;
-}
-.file-label strong {
-  color: var(--text-light);
-  margin-bottom: 0.5rem;
-}
-.dropzone.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* --- Status Bar --- */
@@ -1179,20 +1167,23 @@
 .dropzone {
   width: 100%;
   height: 100%;
-  min-height: 400px;
-  border: 2px dashed var(--border-medium);
-  border-radius: 12px;
+  min-height: 360px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   box-sizing: border-box;
-  background-color: var(--bg-accent);
+  background-color: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .dropzone.dragging {
   border-color: var(--brand-primary);
-  background-color: rgba(18, 78, 120, 0.05);
+  box-shadow: 0 15px 60px rgba(245, 194, 73, 0.2);
+  background-color: rgba(245, 158, 11, 0.08);
 }
 
 .file-input {
@@ -1211,15 +1202,16 @@
 }
 
 .file-label svg {
-  fill: var(--text-muted);
+  fill: var(--text-secondary);
   margin-bottom: 1rem;
   width: 48px;
   height: 48px;
 }
 
 .file-label strong {
-  color: var(--text-secondary);
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
+  font-size: 1rem;
 }
 
 .dropzone.disabled {

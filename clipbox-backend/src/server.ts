@@ -15,7 +15,7 @@ const PORT: number = parseInt(process.env.PORT || '4000', 10);
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
 app.use(Express.json());
 app.use(Express.static(process.env.PUBLIC_DIR || 'public'));
-app.use('/uploads', Express.static(process.env.UPLOAD_DIR || 'uploads'));
+app.use('/api/uploads', Express.static(process.env.UPLOAD_DIR || 'uploads'));
 
 // --- Health Check Endpoint ---
 app.get('/health', (req: Request, res: Response) => {
