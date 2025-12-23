@@ -21,10 +21,12 @@ const worker = new Worker('video-processing', async (job: Job<VideoJobData>) => 
   }
 }, {
   connection: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD || undefined
+    host: process.env.REDIS_HOST!,
+    port: Number(process.env.REDIS_PORT),
+    password: process.env.REDIS_PASSWORD,
+    tls: {} // 🔥 REQUIRED
   },
+  
   concurrency: 2
 });
 

@@ -12,7 +12,7 @@ const app: Application = Express();
 const PORT: number = parseInt(process.env.PORT || '4000', 10);
 
 // --- Middleware ---
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' || 'https://clip-box-fe.vercel.app' }));
 app.use(Express.json());
 app.use(Express.static(process.env.PUBLIC_DIR || 'public'));
 app.use('/api/uploads', Express.static(process.env.UPLOAD_DIR || 'uploads'));
