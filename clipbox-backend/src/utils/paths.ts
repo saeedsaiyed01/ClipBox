@@ -1,8 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 
-export const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
-export const PUBLIC_DIR = path.join(process.cwd(), 'public');
+/**
+ * On Render:
+ * process.cwd() === /opt/render/project/src/clipbox-backend
+ */
+export const ROOT_DIR = process.cwd();
+
+export const UPLOADS_DIR = path.join(ROOT_DIR, 'uploads');
+export const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 
 export function ensureUploadsDir() {
   if (!fs.existsSync(UPLOADS_DIR)) {

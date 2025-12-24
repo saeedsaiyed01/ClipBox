@@ -3,7 +3,10 @@ import dotenv from 'dotenv';
 import { processVideoJob } from './jobs/video.processor.js';
 import { VideoJobData } from './queues/video.queue.js';
 import logger from './utils/logger.js';
+import { ensurePublicDir, ensureUploadsDir } from './utils/paths.js';
 
+ensureUploadsDir();
+ensurePublicDir();
 // Load environment variables
 dotenv.config();
 
