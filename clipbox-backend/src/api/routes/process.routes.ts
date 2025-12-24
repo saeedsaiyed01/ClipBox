@@ -1,8 +1,8 @@
 import { Router } from 'express';
+import fs from 'fs';
 import multer from 'multer';
 import { getJobStatus, processVideo } from '../../../controllers/process.controller.js';
 import logger from '../../utils/logger.js';
-
 const router = Router();
 
 // --- File Upload Configuration ---
