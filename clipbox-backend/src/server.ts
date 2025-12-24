@@ -4,7 +4,7 @@ import Express, { Application, NextFunction, Request, Response } from 'express';
 import { errorHandler } from './../middleware/errorHandler.js';
 import processRoutes from './api/routes/process.routes.js';
 import logger from './utils/logger.js';
-
+import { ensureUploadsDir } from './utils/paths.js';
 // Load environment variables
 dotenv.config();
 
@@ -16,7 +16,7 @@ app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' || 'h
 app.use(Express.json());
 app.use(Express.static(process.env.PUBLIC_DIR || 'public'));
 app.use('/api/uploads', Express.static(process.env.UPLOAD_DIR || 'uploads'));
-
+ensureUploadsDir();
 // --- Health Check Endpoint ---
 app.get('/health', (req: Request, res: Response) => {
   res.json({
