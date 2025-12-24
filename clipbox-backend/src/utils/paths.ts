@@ -17,7 +17,11 @@ export function ensureUploadsDir() {
 }
 
 export function ensurePublicDir() {
+  console.log('ENSURE PUBLIC DIR:', { PUBLIC_DIR, exists: fs.existsSync(PUBLIC_DIR) });
   if (!fs.existsSync(PUBLIC_DIR)) {
     fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+    console.log('CREATED PUBLIC DIR:', PUBLIC_DIR);
+  } else {
+    console.log('PUBLIC DIR ALREADY EXISTS:', PUBLIC_DIR);
   }
 }
