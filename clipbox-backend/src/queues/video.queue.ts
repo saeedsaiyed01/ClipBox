@@ -19,5 +19,6 @@ export const videoQueue = new Queue<VideoJobData, VideoJobResult>('video-process
     port: Number(process.env.REDIS_PORT),
     password: process.env.REDIS_PASSWORD,
     tls: {} // 🔥 REQUIRED
+    family: 4 // 🔥 FORCE IPV4 (THIS FIXES ETIMEDOUT)
   }
 });

@@ -24,7 +24,8 @@ const worker = new Worker('video-processing', async (job: Job<VideoJobData>) => 
     host: process.env.REDIS_HOST!,
     port: Number(process.env.REDIS_PORT),
     password: process.env.REDIS_PASSWORD,
-    tls: {} // 🔥 REQUIRED
+    tls: {}, // 🔥 REQUIRED
+    family: 4 // 🔥 FORCE IPV4 (THIS FIXES ETIMEDOUT)
   },
   
   concurrency: 2
