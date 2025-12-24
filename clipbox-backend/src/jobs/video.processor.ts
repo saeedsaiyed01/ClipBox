@@ -4,6 +4,7 @@ import path from 'path';
 import { VideoJobData } from '../queues/video.queue';
 import { AspectRatio } from '../types';
 import logger from '../utils/logger.js';
+import { ensurePublicDir } from '../utils/paths.js';
 
 // --- HELPER FUNCTIONS ---
 const getDimensions = (ratio: AspectRatio): { w: number, h: number } => {
@@ -37,6 +38,9 @@ const parseGradient = (gradient: string): { type: 0 | 1, c0: string, c1: string 
 export const processVideoJob = (job: Job<VideoJobData>): Promise<string> => {
   const { videoPath, settings } = job.data;
   const { background, aspectRatio, zoom, borderRadius, position } = settings;
+
+  // Ensure output directory exists
+  ensurePublicDir();
 
   logger.info(`Processing job with settings`, { jobId: job.id, settings });
 
