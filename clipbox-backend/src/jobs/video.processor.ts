@@ -14,12 +14,17 @@ import {
   ensureUploadsDir
 } from '../utils/paths.js';
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Configure Cloudinary using CLOUDINARY_URL
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config({ CLOUDINARY_URL: process.env.CLOUDINARY_URL });
+} else {
+  // Fallback to individual variables if CLOUDINARY_URL not set
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
 
 /* -------------------------------------------------------------------------- */
 /*                               HELPER UTILS                                  */
@@ -130,11 +135,15 @@ export const processVideoJob = async (
     ffmpeg.on('close', async code => {
       if (code === 0) {
         try {
-          // Upload to Cloudinary
+          logger.info('Starting Cloudinary upload', { jobId: job.id, outputPath });
+
+          // Upload to Cloudinary with video resource type
           const uploadResult = await cloudinary.uploader.upload(outputPath, {
             resource_type: 'video',
             folder: 'clipbox/outputs',
-            public_id: `output-${job.id}`
+            public_id: `output-${job.id}`,
+            use_filename: false,
+            unique_filename: false
           });
 
           // Delete local file to save memory
@@ -145,9 +154,11 @@ export const processVideoJob = async (
           logger.info('Job completed and uploaded to Cloudinary', {
             jobId: job.id,
             finalUrl,
-            cloudinaryPublicId: uploadResult.public_id
+            cloudinaryPublicId: uploadResult.public_id,
+            bytes: uploadResult.bytes
           });
 
+          // Return only the Cloudinary secure URL
           resolve({ finalUrl });
         } catch (uploadError) {
           logger.error('Cloudinary upload failed', {
