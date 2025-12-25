@@ -54,8 +54,10 @@ export const processVideoJob = async (
   /*                       ENSURE REQUIRED DIRECTORIES                         */
   /* ------------------------------------------------------------------------ */
 
+  console.log('VIDEO PROCESSOR: Ensuring directories...');
   ensureUploadsDir();
   ensurePublicDir();
+  console.log('VIDEO PROCESSOR: Directories ensured');
 
   const inputPath = path.join(UPLOADS_DIR, path.basename(videoPath));
   const outputPath = path.join(PUBLIC_DIR, `output-${job.id}.mp4`);
