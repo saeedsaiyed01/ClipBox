@@ -46,7 +46,7 @@ const parseGradient = (gradient: string) => {
 
 export const processVideoJob = async (
   job: Job<VideoJobData>
-): Promise<string> => {
+): Promise<{ finalUrl: string }> => {
   const { videoPath, settings } = job.data;
   const { background, aspectRatio, zoom, borderRadius, position } = settings;
 
@@ -133,7 +133,7 @@ export const processVideoJob = async (
          const finalUrl = `${baseUrl}/public/output-${job.id}.mp4`;
          
         logger.info('Job completed', { jobId: job.id, finalUrl });
-        resolve(finalUrl);
+        resolve({ finalUrl });
       } else {
         logger.error('FFmpeg failed', {
           jobId: job.id,
