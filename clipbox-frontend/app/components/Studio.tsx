@@ -248,11 +248,12 @@ export default function Studio() {
     finalUrl && status === 'success' ? (
       <a
         href={finalUrl}
-        download="clipbox-video.mp4"
+        target="_blank"
+        rel="noopener noreferrer"
         className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_10px_40px_rgba(251,191,36,0.45)] transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
       >
         <Download className="h-4 w-4" />
-        Download / Export
+        View / Download
       </a>
     ) : (
       <button

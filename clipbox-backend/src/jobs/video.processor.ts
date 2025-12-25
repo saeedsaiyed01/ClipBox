@@ -14,17 +14,6 @@ import {
   ensureUploadsDir
 } from '../utils/paths.js';
 
-// Configure Cloudinary using CLOUDINARY_URL
-if (process.env.CLOUDINARY_URL) {
-  cloudinary.config({ CLOUDINARY_URL: process.env.CLOUDINARY_URL });
-} else {
-  // Fallback to individual variables if CLOUDINARY_URL not set
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-}
 
 /* -------------------------------------------------------------------------- */
 /*                               HELPER UTILS                                  */
@@ -59,7 +48,7 @@ const parseGradient = (gradient: string) => {
 
 export const processVideoJob = async (
   job: Job<VideoJobData>
-): Promise<{ finalUrl: string }> => {
+): Promise<string> => {
   const { videoPath, settings } = job.data;
   const { background, aspectRatio, zoom, borderRadius, position } = settings;
 
@@ -180,6 +169,13 @@ export const processVideoJob = async (
     ffmpeg.on('close', async code => {
       if (code === 0) {
         try {
+          // Configure Cloudinary using individual variables
+          cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET
+          });
+
           logger.info('Starting Cloudinary upload', { jobId: job.id, outputPath });
 
           // Upload to Cloudinary with video resource type
@@ -204,7 +200,7 @@ export const processVideoJob = async (
           });
 
           // Return only the Cloudinary secure URL
-          resolve({ finalUrl });
+          resolve(finalUrl);
         } catch (uploadError) {
           logger.error('Cloudinary upload failed', {
             jobId: job.id,

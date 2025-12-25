@@ -80,7 +80,7 @@ export const getJobStatus = async (req: Request, res: Response, next: NextFuncti
 
     switch (state) {
       case 'completed':
-        res.json({ status: 'completed', url: job.returnvalue?.finalUrl });
+        res.json({ status: 'completed', url: job.returnvalue });
         break;
       case 'failed':
         logger.error('Failed job status requested', { jobId, failedReason: job.failedReason });

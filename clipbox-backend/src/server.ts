@@ -2,12 +2,13 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import Express, { Application, NextFunction, Request, Response } from 'express';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { errorHandler } from './../middleware/errorHandler.js';
 import processRoutes from './api/routes/process.routes.js';
 import logger from './utils/logger.js';
 import { ensurePublicDir, ensureUploadsDir } from './utils/paths.js';
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.env') });
 
 const app: Application = Express();
 const PORT: number = parseInt(process.env.PORT || '4000', 10);
