@@ -85,19 +85,61 @@ export const processVideoJob = async (
     outputPath
   });
 
-  // For Render's free tier, disable complex video processing to prevent memory issues
-  // Just do basic scaling and encoding without backgrounds or effects
-
   const { w: canvasW, h: canvasH } = getDimensions(aspectRatio);
   const zoomFactor = Math.min((zoom ?? 100) / 100, 1.0); // Limit zoom to prevent memory issues
 
   const scaleW = Math.floor((canvasW * zoomFactor) / 2) * 2;
   const scaleH = Math.floor((canvasH * zoomFactor) / 2) * 2;
 
-  // Simple filter: just scale the video
-  const filters: string[] = [
-    `scale=${scaleW}:${scaleH}`
-  ];
+  const filters: string[] = [];
+
+  /* ------------------------------------------------------------------------ */
+  /*                              BACKGROUND                                  */
+  /* ------------------------------------------------------------------------ */
+
+  if (background.type === 'solid') {
+    filters.push(`color=color=${background.value}:size=${canvasW}x${canvasH}[bg];`);
+  } else if (background.type === 'gradient') {
+    const { c0, c1, horizontal } = parseGradient(background.value);
+    const x1 = horizontal ? canvasW : 0;
+    const y1 = horizontal ? 0 : canvasH;
+    filters.push(
+      `gradients=s=${canvasW}x${canvasH}:c0=${c0}:c1=${c1}:x0=0:y0=0:x1=${x1}:y1=${y1}[bg];`
+    );
+  } else {
+    filters.push(`color=color=black:size=${canvasW}x${canvasH}[bg];`);
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /*                             SCALE VIDEO                                  */
+  /* ------------------------------------------------------------------------ */
+
+  filters.push(`[0:v]scale=${scaleW}:${scaleH}[scaled];`);
+
+  let videoStream = '[scaled]';
+
+  /* ------------------------------------------------------------------------ */
+  /*                          SIMPLE BORDER RADIUS                             */
+  /* ------------------------------------------------------------------------ */
+
+  if (borderRadius && borderRadius > 0) {
+    // Very simple border radius: just crop slightly to create rounded effect
+    const cropMargin = Math.min(borderRadius, 10); // Limit to prevent memory issues
+    const cropW = Math.max(scaleW - cropMargin * 2, scaleW * 0.95);
+    const cropH = Math.max(scaleH - cropMargin * 2, scaleH * 0.95);
+
+    filters.push(`[scaled]crop=${cropW}:${cropH}:(iw-ow)/2:(ih-oh)/2[rounded];`);
+    videoStream = '[rounded]';
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /*                               OVERLAY                                    */
+  /* ------------------------------------------------------------------------ */
+
+  const overlayX = `(W-w)/2+(${position?.x ?? 0})`;
+  const overlayY = `(H-h)/2+(${position?.y ?? 0})`;
+
+  filters.push(`[bg]${videoStream}overlay=${overlayX}:${overlayY}[outv]`);
 
   /* ------------------------------------------------------------------------ */
   /*                             FFMPEG ARGS                                  */
@@ -105,7 +147,9 @@ export const processVideoJob = async (
 
   const ffmpegArgs = [
     '-i', inputPath,
-    '-vf', filters.join(','),  // Simple filter, not complex
+    '-filter_complex', filters.join(''),  // Complex filter for background/overlay
+    '-map', '[outv]',
+    '-map', '0:a?',
     '-c:v', 'libx264',
     '-preset', 'ultrafast',
     '-crf', '28',
@@ -113,6 +157,7 @@ export const processVideoJob = async (
     '-c:a', 'copy',
     '-movflags', '+faststart',
     '-t', '30',  // Limit to 30 seconds
+    '-max_muxing_queue_size', '1024',  // Memory limit
     '-y',
     outputPath
   ];
