@@ -110,18 +110,10 @@ export const processVideoJob = async (
   /* ------------------------------------------------------------------------ */
 
   if (borderRadius && borderRadius > 0) {
-    const r = borderRadius;
+    // Simplified border radius for memory efficiency
+    const r = Math.min(borderRadius, Math.min(scaleW, scaleH) / 4); // Limit radius to prevent memory issues
 
-    const maskExpr = `geq='255 - (
-      lt(X,${r})*lt(Y,${r})*gt((X-${r})*(X-${r})+(Y-${r})*(Y-${r}),${r * r}) +
-      lt(X,${r})*gt(Y,${scaleH - r})*gt((X-${r})*(X-${r})+(Y-${scaleH - r})*(Y-${scaleH - r}),${r * r}) +
-      gt(X,${scaleW - r})*lt(Y,${r})*gt((X-${scaleW - r})*(X-${scaleW - r})+(Y-${r})*(Y-${r}),${r * r}) +
-      gt(X,${scaleW - r})*gt(Y,${scaleH - r})*gt((X-${scaleW - r})*(X-${scaleW - r})+(Y-${scaleH - r})*(Y-${scaleH - r}),${r * r})
-    ) * 255'`;
-
-    filters.push(`color=white:size=${scaleW}x${scaleH},format=rgba,${maskExpr}[mask];`);
-    filters.push(`[scaled][mask]alphamerge[final];`);
-
+    filters.push(`[scaled]roundrect=${r}:${r}:${scaleW - r}:${scaleH - r}:${r}:${r}:1[final];`);
     videoStream = '[final]';
   }
 
@@ -144,11 +136,13 @@ export const processVideoJob = async (
     '-map', '[outv]',
     '-map', '0:a?',
     '-c:v', 'libx264',
-    '-preset', 'fast',
-    '-crf', '23',
+    '-preset', 'ultrafast',  // Changed from 'fast' to 'ultrafast' for lower memory
+    '-crf', '28',  // Increased from 23 to 28 for smaller file/less processing
     '-pix_fmt', 'yuv420p',
     '-c:a', 'copy',
     '-movflags', '+faststart',
+    '-t', '30',  // Limit output to 30 seconds
+    '-max_muxing_queue_size', '1024',  // Limit memory usage
     '-y',
     outputPath
   ];
