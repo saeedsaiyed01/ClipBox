@@ -1,5 +1,6 @@
 import { Job } from 'bullmq';
 import { spawn } from 'child_process';
+import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import path from 'path';
 
@@ -12,6 +13,13 @@ import {
   ensurePublicDir,
   ensureUploadsDir
 } from '../utils/paths.js';
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 /* -------------------------------------------------------------------------- */
 /*                               HELPER UTILS                                  */
@@ -119,21 +127,43 @@ export const processVideoJob = async (
 
     ffmpeg.stderr.on('data', d => (stderr += d.toString()));
 
-    ffmpeg.on('close', code => {
+    ffmpeg.on('close', async code => {
       if (code === 0) {
-         // Use BASE_URL if set (production), otherwise construct from environment
-         let baseUrl = process.env.BASE_URL;
+        try {
+          // Upload to Cloudinary
+          const uploadResult = await cloudinary.uploader.upload(outputPath, {
+            resource_type: 'video',
+            folder: 'clipbox/outputs',
+            public_id: `output-${job.id}`
+          });
 
-         if (!baseUrl) {
-           const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-           const port = process.env.PORT || '10000';
-           baseUrl = `${protocol}://localhost:${port}`;
-         }
-         
-         const finalUrl = `${baseUrl}/public/output-${job.id}.mp4`;
-         
-        logger.info('Job completed', { jobId: job.id, finalUrl });
-        resolve({ finalUrl });
+          // Delete local file to save memory
+          fs.unlinkSync(outputPath);
+
+          const finalUrl = uploadResult.secure_url;
+
+          logger.info('Job completed and uploaded to Cloudinary', {
+            jobId: job.id,
+            finalUrl,
+            cloudinaryPublicId: uploadResult.public_id
+          });
+
+          resolve({ finalUrl });
+        } catch (uploadError) {
+          logger.error('Cloudinary upload failed', {
+            jobId: job.id,
+            error: (uploadError as Error).message
+          });
+
+          // Clean up local file even if upload fails
+          try {
+            fs.unlinkSync(outputPath);
+          } catch (cleanupError) {
+            logger.warn('Failed to cleanup local file', { jobId: job.id, error: (cleanupError as Error).message });
+          }
+
+          reject(new Error(`Cloudinary upload failed: ${(uploadError as Error).message}`));
+        }
       } else {
         logger.error('FFmpeg failed', {
           jobId: job.id,
