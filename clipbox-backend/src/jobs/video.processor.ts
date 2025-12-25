@@ -106,14 +106,16 @@ export const processVideoJob = async (
   let videoStream = '[scaled]';
 
   /* ------------------------------------------------------------------------ */
-  /*                          BORDER RADIUS MASK                               */
+  /*                          BORDER RADIUS - SIMPLIFIED                       */
   /* ------------------------------------------------------------------------ */
 
   if (borderRadius && borderRadius > 0) {
-    // Simplified border radius for memory efficiency
-    const r = Math.min(borderRadius, Math.min(scaleW, scaleH) / 4); // Limit radius to prevent memory issues
+    // Simplified border radius: just crop corners slightly
+    // This avoids complex masking that exceeds memory limits
+    const cropW = Math.max(scaleW - borderRadius * 2, scaleW * 0.9);
+    const cropH = Math.max(scaleH - borderRadius * 2, scaleH * 0.9);
 
-    filters.push(`[scaled]roundrect=${r}:${r}:${scaleW - r}:${scaleH - r}:${r}:${r}:1[final];`);
+    filters.push(`[scaled]crop=${cropW}:${cropH}:(iw-ow)/2:(ih-oh)/2[final];`);
     videoStream = '[final]';
   }
 
