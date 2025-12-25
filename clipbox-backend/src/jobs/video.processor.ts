@@ -164,9 +164,17 @@ export const processVideoJob = async (
 
     ffmpeg.on('close', code => {
       if (code === 0) {
-        const baseUrl = process.env.BASE_URL ?? 'http://localhost:10000';
-        const finalUrl = `${baseUrl}/public/output-${job.id}.mp4`;
+         // Use BASE_URL if set (production), otherwise construct from environment
+         let baseUrl = process.env.BASE_URL;
 
+         if (!baseUrl) {
+           const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+           const port = process.env.PORT || '10000';
+           baseUrl = `${protocol}://localhost:${port}`;
+         }
+         
+         const finalUrl = `${baseUrl}/public/output-${job.id}.mp4`;
+         
         logger.info('Job completed', { jobId: job.id, finalUrl });
         resolve(finalUrl);
       } else {
