@@ -20,7 +20,7 @@ const RATIOS: { key: AspectRatio, label: string }[] = [
 export default function LayoutPanel({ settings, setSettings, disabled }: LayoutPanelProps) {
   return (
     <div className="panel-section">
-      <h4 className="panel-title">Aspect Ratio</h4>
+      <h4 className="ui-label">Aspect Ratio</h4>
       <div className="button-grid">
         {RATIOS.map((ratio) => (
           <button

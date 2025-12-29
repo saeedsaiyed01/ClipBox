@@ -35,8 +35,8 @@ const getDimensions = (ratio: AspectRatio): { w: number; h: number } => {
 
 const parseGradient = (gradient: string) => {
   const colors = gradient.match(/#([0-9a-fA-F]{6})/g) || ['#000000', '#ffffff'];
-  const c0 = `0x${colors[0].replace('#', '')}`;
-  const c1 = `0x${colors[1]?.replace('#', '') || colors[0].replace('#', '')}`;
+  const c0 = colors[0].replace('#', '');
+  const c1 = colors[1]?.replace('#', '') || colors[0].replace('#', '');
   const horizontal = gradient.includes('to right');
 
   return { c0, c1, horizontal };

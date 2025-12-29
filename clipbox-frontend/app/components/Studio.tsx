@@ -153,8 +153,8 @@ export default function Studio() {
       setProgress(0);
       interval = setInterval(() => {
         setProgress(prev => {
-          if (prev < 90) {
-            return prev + Math.random() * 5; // Random increment for natural feel
+          if (prev < 95) {
+            return prev + Math.random() * 3; // Random increment for natural feel
           }
           return prev;
         });
@@ -250,7 +250,7 @@ export default function Studio() {
         href={finalUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_10px_40px_rgba(251,191,36,0.45)] transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+        className="inline-flex items-center gap-2 rounded-full bg-[#f5c249] px-6 py-3 text-sm font-semibold text-black shadow-[0_10px_40px_rgba(245,194,73,0.45)] transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5c249]"
       >
         <Download className="h-4 w-4" />
         View / Download
@@ -259,7 +259,7 @@ export default function Studio() {
       <button
         onClick={handleSubmit}
         disabled={!file || isProcessing}
-        className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_10px_40px_rgba(251,191,36,0.45)] transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
+        className="inline-flex items-center gap-2 rounded-full bg-[#f5c249] px-6 py-3 text-sm font-semibold text-black shadow-[0_10px_40px_rgba(245,194,73,0.45)] transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5c249] disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Download className="h-4 w-4" />
         Download / Export
@@ -267,18 +267,17 @@ export default function Studio() {
     );
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white">
-      <div className="mx-auto flex max-w-[2000px] flex-col lg:grid lg:min-h-screen lg:grid-cols-[35%_65%]">
-        <aside className="border-b border-white/5 px-6 py-8 lg:flex lg:flex-col lg:gap-8 lg:border-b-0 lg:border-r lg:px-10 lg:py-12">
+    <div className="min-h-screen bg-[#0F0F0F] text-white">
+      <div className="mx-auto flex max-w-[1600px] flex-col lg:grid lg:min-h-screen lg:grid-cols-[28%_72%]">
+        <aside className="border-b border-white/10 px-4 py-6 lg:flex lg:flex-col lg:gap-6 lg:border-b-0 lg:border-r lg:px-6 lg:py-8">
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-zinc-600">Studio</p>
-            <h1 className="mt-3 text-3xl font-semibold text-white">Clipbox Studio</h1>
-            <p className="mt-2 text-sm text-zinc-500">
+            <h1 className="text-2xl text-white serif-text">Clipbox Studio</h1>
+            <p className="mt-2 text-sm text-zinc-400">
               Shape your canvas, dial in styling, and export polished clips.
             </p>
           </div>
 
-          <div className="flex-1 space-y-6 overflow-y-auto pr-2 lg:max-h-[calc(100vh-8rem)]">
+          <div className="flex-1 space-y-6">
             <LayoutPanel
               settings={settings}
               setSettings={updateSettings}
@@ -297,8 +296,8 @@ export default function Studio() {
           </div>
         </aside>
 
-        <section className="relative flex min-h-[60vh] flex-col bg-zinc-950 lg:sticky lg:top-0 lg:h-screen">
-          <div className="absolute right-6 top-6 z-20">
+        <section className="relative flex min-h-[60vh] flex-col bg-[#0F0F0F] lg:sticky lg:top-0 lg:h-screen">
+          <div className="absolute right-8 top-8 z-20">
             {primaryAction}
           </div>
 
@@ -320,9 +319,9 @@ export default function Studio() {
             </div>
           </div>
 
-          <div className="border-t border-white/5 bg-black/30 px-6 py-6 backdrop-blur lg:px-12">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="text-xs uppercase tracking-[0.4em] text-zinc-600">
+          <div className="border-t border-white/10 bg-black/30 px-8 py-8 backdrop-blur lg:px-12">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between max-w-5xl mx-auto">
+              <div className="ui-label text-xs">
                 Playback Toolbar
               </div>
               {videoPreviewUrl && (
@@ -336,7 +335,7 @@ export default function Studio() {
               )}
             </div>
 
-            <div className="mt-4 rounded-2xl border border-white/10 bg-black/40 p-5 shadow-inner">
+            <div className="mt-4 rounded-2xl border border-white/10 bg-[#1A1A1A] p-6 shadow-inner">
               {renderStatusContent()}
             </div>
           </div>

@@ -256,8 +256,8 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
   };
 
   return (
-    <div className="settings-group">
-      <h4>Background</h4>
+    <div className="panel-section">
+      <h4 className="ui-label">Background</h4>
       
       {/* --- Tab Buttons --- */}
       <div className="button-group">
