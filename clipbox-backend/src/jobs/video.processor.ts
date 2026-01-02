@@ -144,8 +144,8 @@ export const processVideoJob = async (
   /*                               OVERLAY                                    */
   /* ------------------------------------------------------------------------ */
 
-  const overlayX = `(W-w)/2+(${position?.x ?? 0})`;
-  const overlayY = `(H-h)/2+(${position?.y ?? 0})`;
+  const overlayX = `(W-w)/2 + ${position?.x ?? 0}`;
+  const overlayY = `(H-h)/2 + ${position?.y ?? 0}`;
 
   filters.push(`[bg]${videoStream}overlay=${overlayX}:${overlayY}[composite];`);
 
