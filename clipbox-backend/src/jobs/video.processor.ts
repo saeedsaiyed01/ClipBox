@@ -15,47 +15,39 @@ import {
   ensureUploadsDir
 } from '../utils/paths.js';
 
-
 /* -------------------------------------------------------------------------- */
-/*                               HELPER UTILS                                  */
+/*                                HELPERS                                     */
 /* -------------------------------------------------------------------------- */
 
-const getDimensions = (ratio: AspectRatio): { w: number; h: number } => {
+const getDimensions = (ratio: AspectRatio) => {
   switch (ratio) {
-    case '1:1':
-      return { w: 1080, h: 1080 };
-    case '9:16':
-      return { w: 1080, h: 1920 };
-    case '4:5':
-      return { w: 1080, h: 1350 };
-    case '16:9':
-    default:
-      return { w: 1920, h: 1080 };
+    case '1:1': return { w: 1080, h: 1080 };
+    case '9:16': return { w: 1080, h: 1920 };
+    case '4:5': return { w: 1080, h: 1350 };
+    default: return { w: 1920, h: 1080 };
   }
 };
 
 const parseGradient = (gradient: string) => {
   const colors = gradient.match(/#([0-9a-fA-F]{6})/g) || ['#000000', '#ffffff'];
   const c0 = colors[0].replace('#', '');
-  const c1 = colors[1]?.replace('#', '') || colors[0].replace('#', '');
+  const c1 = colors[1]?.replace('#', '') || c0;
   const horizontal = gradient.includes('to right');
-
   return { c0, c1, horizontal };
 };
 
-/**
- * Generate a rounded rectangle mask PNG image
- * White = visible, Black = transparent
- */
-const generateRoundedMask = (width: number, height: number, radius: number, outputPath: string): void => {
+const generateRoundedMask = (
+  width: number,
+  height: number,
+  radius: number,
+  outputPath: string
+) => {
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
-  // Fill with black (transparent areas)
   ctx.fillStyle = 'black';
   ctx.fillRect(0, 0, width, height);
 
-  // Draw white rounded rectangle (visible area)
   ctx.fillStyle = 'white';
   ctx.beginPath();
   ctx.moveTo(radius, 0);
@@ -70,9 +62,7 @@ const generateRoundedMask = (width: number, height: number, radius: number, outp
   ctx.closePath();
   ctx.fill();
 
-  // Save as PNG
-  const buffer = canvas.toBuffer('image/png');
-  fs.writeFileSync(outputPath, buffer);
+  fs.writeFileSync(outputPath, canvas.toBuffer('image/png'));
 };
 
 /* -------------------------------------------------------------------------- */
@@ -82,17 +72,12 @@ const generateRoundedMask = (width: number, height: number, radius: number, outp
 export const processVideoJob = async (
   job: Job<VideoJobData>
 ): Promise<string> => {
+
   const { videoPath, settings } = job.data;
   const { background, aspectRatio, zoom, borderRadius, position } = settings;
 
-  /* ------------------------------------------------------------------------ */
-  /*                       ENSURE REQUIRED DIRECTORIES                         */
-  /* ------------------------------------------------------------------------ */
-
-  console.log('VIDEO PROCESSOR: Ensuring directories...');
   ensureUploadsDir();
   ensurePublicDir();
-  console.log('VIDEO PROCESSOR: Directories ensured');
 
   const inputPath = path.join(UPLOADS_DIR, path.basename(videoPath));
   const outputPath = path.join(PUBLIC_DIR, `output-${job.id}.mp4`);
@@ -101,98 +86,67 @@ export const processVideoJob = async (
     throw new Error(`Input video not found: ${inputPath}`);
   }
 
-  logger.info('Starting video processing', {
-    jobId: job.id,
-    inputPath,
-    outputPath
-  });
-
   const { w: canvasW, h: canvasH } = getDimensions(aspectRatio);
-  const zoomFactor = Math.min((zoom ?? 100) / 100, 1.0); // Limit zoom to prevent memory issues
-
+  const zoomFactor = Math.min((zoom ?? 100) / 100, 1);
   const scaleW = Math.floor((canvasW * zoomFactor) / 2) * 2;
   const scaleH = Math.floor((canvasH * zoomFactor) / 2) * 2;
 
+  const offsetX = position?.x ?? 0;
+  const offsetY = position?.y ?? 0;
+
+  const overlayX = offsetX === 0 ? '(W-w)/2' : `(W-w)/2+${offsetX}`;
+  const overlayY = offsetY === 0 ? '(H-h)/2' : `(H-h)/2+${offsetY}`;
+
   const filters: string[] = [];
 
-  /* ------------------------------------------------------------------------ */
-  /*                              BACKGROUND                                  */
-  /* ------------------------------------------------------------------------ */
+  /* ----------------------------- BACKGROUND ----------------------------- */
 
   if (background.type === 'solid') {
-    filters.push(`color=color=${background.value}:size=${canvasW}x${canvasH}[bg];`);
+    filters.push(`color=color=${background.value}:size=${canvasW}x${canvasH}[bg]`);
   } else if (background.type === 'gradient') {
     const { c0, c1, horizontal } = parseGradient(background.value);
     const x1 = horizontal ? canvasW : 0;
     const y1 = horizontal ? 0 : canvasH;
     filters.push(
-      `gradients=s=${canvasW}x${canvasH}:c0=${c0}:c1=${c1}:x0=0:y0=0:x1=${x1}:y1=${y1}[bg];`
+      `gradients=s=${canvasW}x${canvasH}:c0=${c0}:c1=${c1}:x0=0:y0=0:x1=${x1}:y1=${y1}[bg]`
     );
   } else {
-    filters.push(`color=color=black:size=${canvasW}x${canvasH}[bg];`);
+    filters.push(`color=color=black:size=${canvasW}x${canvasH}[bg]`);
   }
 
-  /* ------------------------------------------------------------------------ */
-  /*                             SCALE VIDEO                                  */
-  /* ------------------------------------------------------------------------ */
+  /* ----------------------------- VIDEO SCALE ----------------------------- */
 
-  filters.push(`[0:v]scale=${scaleW}:${scaleH}[scaled];`);
-
-  let videoStream = '[scaled]';
-
-  /* ------------------------------------------------------------------------ */
-  /*                               OVERLAY                                    */
-  /* ------------------------------------------------------------------------ */
-
-  const overlayX = `(W-w)/2 + ${position?.x ?? 0}`;
-  const overlayY = `(H-h)/2 + ${position?.y ?? 0}`;
-
-  filters.push(`[bg]${videoStream}overlay=${overlayX}:${overlayY}[composite];`);
-
-  /* ------------------------------------------------------------------------ */
-  /*                        FINAL BORDER RADIUS MASK                          */
-  /* ------------------------------------------------------------------------ */
+  filters.push(`[0:v]scale=${scaleW}:${scaleH}[scaled]`);
 
   let outputStream = '[composite]';
-
   let maskPath: string | null = null;
+
+  /* --------------------------- BORDER RADIUS --------------------------- */
 
   if (borderRadius && borderRadius > 0) {
     const radius = Math.min(borderRadius, Math.floor(Math.min(scaleW, scaleH) / 2));
-
-    // Generate rounded mask image
     maskPath = path.join(PUBLIC_DIR, `mask-${job.id}.png`);
     generateRoundedMask(scaleW, scaleH, radius, maskPath);
 
-    // Remove the old overlay filter
-    filters.pop();
-
-    // Apply rounded corners to the scaled video using the mask
-    // Use [1:v] to reference the mask input (second input file)
-    filters.push(`[scaled]format=yuva420p[video_alpha];`);
-    filters.push(`[1:v]scale=${scaleW}:${scaleH}[mask];`);
-    filters.push(`[video_alpha][mask]alphamerge[rounded_video];`);
-    
-    // Now overlay the rounded video on the background
-    filters.push(`[bg][rounded_video]overlay=${overlayX}:${overlayY}[final];`);
+    filters.push(`[scaled]format=yuva420p[video_alpha]`);
+    filters.push(`[1:v]scale=${scaleW}:${scaleH}[mask]`);
+    filters.push(`[video_alpha][mask]alphamerge[rounded_video]`);
+    filters.push(`[bg][rounded_video]overlay=${overlayX}:${overlayY}[final]`);
     outputStream = '[final]';
+  } else {
+    filters.push(`[bg][scaled]overlay=${overlayX}:${overlayY}[composite]`);
   }
 
-  /* ------------------------------------------------------------------------ */
-  /*                             FFMPEG ARGS                                  */
-  /* ------------------------------------------------------------------------ */
+  /* ----------------------------- FFMPEG ----------------------------- */
 
-  const ffmpegArgs = [
-    '-i', inputPath,
-  ];
+  const ffmpegArgs = ['-i', inputPath];
 
-  // Add mask as second input if border radius is enabled
   if (maskPath) {
     ffmpegArgs.push('-i', maskPath);
   }
 
   ffmpegArgs.push(
-    '-filter_complex', filters.join(''),  // Complex filter for background/overlay
+    '-filter_complex', filters.join(';'),
     '-map', outputStream,
     '-map', '0:a?',
     '-c:v', 'libx264',
@@ -201,8 +155,7 @@ export const processVideoJob = async (
     '-pix_fmt', 'yuv420p',
     '-c:a', 'copy',
     '-movflags', '+faststart',
-    '-t', '30',  // Limit to 30 seconds
-    '-max_muxing_queue_size', '1024',  // Memory limit
+    '-t', '30',
     '-y',
     outputPath
   );
@@ -212,9 +165,7 @@ export const processVideoJob = async (
     command: `ffmpeg ${ffmpegArgs.join(' ')}`
   });
 
-  /* ------------------------------------------------------------------------ */
-  /*                              EXECUTION                                   */
-  /* ------------------------------------------------------------------------ */
+  /* ----------------------------- EXECUTION ----------------------------- */
 
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn('ffmpeg', ffmpegArgs);
@@ -223,77 +174,28 @@ export const processVideoJob = async (
     ffmpeg.stderr.on('data', d => (stderr += d.toString()));
 
     ffmpeg.on('close', async code => {
-      // Clean up mask file if it was created
-      if (maskPath && fs.existsSync(maskPath)) {
-        try {
-          fs.unlinkSync(maskPath);
-        } catch (err) {
-          logger.warn('Failed to delete mask file', { jobId: job.id, maskPath });
-        }
+      if (maskPath && fs.existsSync(maskPath)) fs.unlinkSync(maskPath);
+
+      if (code !== 0) {
+        logger.error('FFmpeg failed', { jobId: job.id, stderr });
+        return reject(new Error('ffmpeg failed'));
       }
 
-      if (code === 0) {
-        try {
-          // Configure Cloudinary using individual variables
-          cloudinary.config({
-            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-            api_key: process.env.CLOUDINARY_API_KEY,
-            api_secret: process.env.CLOUDINARY_API_SECRET
-          });
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+      });
 
-          logger.info('Starting Cloudinary upload', { jobId: job.id, outputPath });
+      const upload = await cloudinary.uploader.upload(outputPath, {
+        resource_type: 'video',
+        folder: 'clipbox/outputs',
+        public_id: `output-${job.id}`,
+        overwrite: true
+      });
 
-          // Upload to Cloudinary with video resource type
-          const uploadResult = await cloudinary.uploader.upload(outputPath, {
-            resource_type: 'video',
-            folder: 'clipbox/outputs',
-            public_id: `output-${job.id}`,
-            use_filename: false,
-            unique_filename: false
-          });
-
-          // Delete local file to save memory
-          fs.unlinkSync(outputPath);
-
-          const finalUrl = uploadResult.secure_url;
-
-          logger.info('Job completed and uploaded to Cloudinary', {
-            jobId: job.id,
-            finalUrl,
-            cloudinaryPublicId: uploadResult.public_id,
-            bytes: uploadResult.bytes
-          });
-
-          // Return only the Cloudinary secure URL
-          resolve(finalUrl);
-        } catch (uploadError) {
-          logger.error('Cloudinary upload failed', {
-            jobId: job.id,
-            error: (uploadError as Error).message
-          });
-
-          // Clean up local file even if upload fails
-          try {
-            fs.unlinkSync(outputPath);
-          } catch (cleanupError) {
-            logger.warn('Failed to cleanup local file', { jobId: job.id, error: (cleanupError as Error).message });
-          }
-
-          reject(new Error(`Cloudinary upload failed: ${(uploadError as Error).message}`));
-        }
-      } else {
-        logger.error('FFmpeg failed', {
-          jobId: job.id,
-          exitCode: code,
-          stderr: stderr.slice(-2000)
-        });
-        reject(new Error(`ffmpeg failed with exit code ${code}`));
-      }
-    });
-
-    ffmpeg.on('error', err => {
-      logger.error('FFmpeg spawn failed', { jobId: job.id, error: err.message });
-      reject(err);
+      fs.unlinkSync(outputPath);
+      resolve(upload.secure_url);
     });
   });
 };
