@@ -1,4 +1,5 @@
 import { Job } from 'bullmq';
+import { createCanvas } from 'canvas';
 import { spawn } from 'child_process';
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
@@ -40,6 +41,38 @@ const parseGradient = (gradient: string) => {
   const horizontal = gradient.includes('to right');
 
   return { c0, c1, horizontal };
+};
+
+/**
+ * Generate a rounded rectangle mask PNG image
+ * White = visible, Black = transparent
+ */
+const generateRoundedMask = (width: number, height: number, radius: number, outputPath: string): void => {
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+
+  // Fill with black (transparent areas)
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, width, height);
+
+  // Draw white rounded rectangle (visible area)
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.moveTo(radius, 0);
+  ctx.lineTo(width - radius, 0);
+  ctx.quadraticCurveTo(width, 0, width, radius);
+  ctx.lineTo(width, height - radius);
+  ctx.quadraticCurveTo(width, height, width - radius, height);
+  ctx.lineTo(radius, height);
+  ctx.quadraticCurveTo(0, height, 0, height - radius);
+  ctx.lineTo(0, radius);
+  ctx.quadraticCurveTo(0, 0, radius, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Save as PNG
+  const buffer = canvas.toBuffer('image/png');
+  fs.writeFileSync(outputPath, buffer);
 };
 
 /* -------------------------------------------------------------------------- */
@@ -108,27 +141,42 @@ export const processVideoJob = async (
   let videoStream = '[scaled]';
 
   /* ------------------------------------------------------------------------ */
-  /*                          SIMPLE BORDER RADIUS                             */
-  /* ------------------------------------------------------------------------ */
-
-  if (borderRadius && borderRadius > 0) {
-    // Very simple border radius: just crop slightly to create rounded effect
-    const cropMargin = Math.min(borderRadius, 10); // Limit to prevent memory issues
-    const cropW = Math.max(scaleW - cropMargin * 2, scaleW * 0.95);
-    const cropH = Math.max(scaleH - cropMargin * 2, scaleH * 0.95);
-
-    filters.push(`[scaled]crop=${cropW}:${cropH}:(iw-ow)/2:(ih-oh)/2[rounded];`);
-    videoStream = '[rounded]';
-  }
-
-  /* ------------------------------------------------------------------------ */
   /*                               OVERLAY                                    */
   /* ------------------------------------------------------------------------ */
 
   const overlayX = `(W-w)/2+(${position?.x ?? 0})`;
   const overlayY = `(H-h)/2+(${position?.y ?? 0})`;
 
-  filters.push(`[bg]${videoStream}overlay=${overlayX}:${overlayY}[outv]`);
+  filters.push(`[bg]${videoStream}overlay=${overlayX}:${overlayY}[composite];`);
+
+  /* ------------------------------------------------------------------------ */
+  /*                        FINAL BORDER RADIUS MASK                          */
+  /* ------------------------------------------------------------------------ */
+
+  let outputStream = '[composite]';
+
+  let maskPath: string | null = null;
+
+  if (borderRadius && borderRadius > 0) {
+    const radius = Math.min(borderRadius, Math.floor(Math.min(scaleW, scaleH) / 2));
+
+    // Generate rounded mask image
+    maskPath = path.join(PUBLIC_DIR, `mask-${job.id}.png`);
+    generateRoundedMask(scaleW, scaleH, radius, maskPath);
+
+    // Remove the old overlay filter
+    filters.pop();
+
+    // Apply rounded corners to the scaled video using the mask
+    // Use [1:v] to reference the mask input (second input file)
+    filters.push(`[scaled]format=yuva420p[video_alpha];`);
+    filters.push(`[1:v]scale=${scaleW}:${scaleH}[mask];`);
+    filters.push(`[video_alpha][mask]alphamerge[rounded_video];`);
+    
+    // Now overlay the rounded video on the background
+    filters.push(`[bg][rounded_video]overlay=${overlayX}:${overlayY}[final];`);
+    outputStream = '[final]';
+  }
 
   /* ------------------------------------------------------------------------ */
   /*                             FFMPEG ARGS                                  */
@@ -136,8 +184,16 @@ export const processVideoJob = async (
 
   const ffmpegArgs = [
     '-i', inputPath,
+  ];
+
+  // Add mask as second input if border radius is enabled
+  if (maskPath) {
+    ffmpegArgs.push('-i', maskPath);
+  }
+
+  ffmpegArgs.push(
     '-filter_complex', filters.join(''),  // Complex filter for background/overlay
-    '-map', '[outv]',
+    '-map', outputStream,
     '-map', '0:a?',
     '-c:v', 'libx264',
     '-preset', 'ultrafast',
@@ -149,7 +205,7 @@ export const processVideoJob = async (
     '-max_muxing_queue_size', '1024',  // Memory limit
     '-y',
     outputPath
-  ];
+  );
 
   logger.info('FFmpeg command', {
     jobId: job.id,
@@ -167,6 +223,15 @@ export const processVideoJob = async (
     ffmpeg.stderr.on('data', d => (stderr += d.toString()));
 
     ffmpeg.on('close', async code => {
+      // Clean up mask file if it was created
+      if (maskPath && fs.existsSync(maskPath)) {
+        try {
+          fs.unlinkSync(maskPath);
+        } catch (err) {
+          logger.warn('Failed to delete mask file', { jobId: job.id, maskPath });
+        }
+      }
+
       if (code === 0) {
         try {
           // Configure Cloudinary using individual variables

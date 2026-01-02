@@ -55,14 +55,16 @@ export default function LandingPage() {
     }
   ];
 
-  const techStack = [
-    { name: "Next.js", description: "Frontend Framework" },
-    { name: "React", description: "UI Library" },
-    { name: "TypeScript", description: "Type Safety" },
-    { name: "Node.js", description: "Backend Runtime" },
-    { name: "FFmpeg", description: "Video Processing" },
-    { name: "Redis", description: "Job Management" }
+  const featureHighlights = [
+    "✨ Custom backgrounds and gradients",
+    "📐 Perfect aspect ratios for any platform",
+    "🔍 Precise zoom and positioning controls",
+    "🎭 Modern border radius effects",
+    "⚡ Real-time preview and instant export"
   ];
+
+
+
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -80,7 +82,6 @@ export default function LandingPage() {
             <nav className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-zinc-300 hover:text-white transition-colors">Features</a>
               <a href="#how-it-works" className="text-zinc-300 hover:text-white transition-colors">How it Works</a>
-              <a href="#technology" className="text-zinc-300 hover:text-white transition-colors">Technology</a>
               <a href="https://github.com" className="text-zinc-300 hover:text-white transition-colors flex items-center space-x-1">
                 <Github className="w-4 h-4" />
                 <span>GitHub</span>
@@ -127,13 +128,7 @@ export default function LandingPage() {
 
           {/* Feature highlights */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-4xl mx-auto text-sm">
-            {[
-              "✨ Custom backgrounds and gradients",
-              "📐 Perfect aspect ratios for any platform", 
-              "🔍 Precise zoom and positioning controls",
-              "🎭 Modern border radius effects",
-              "⚡ Real-time preview and instant export"
-            ].map((feature, index) => (
+            {featureHighlights.map((feature, index) => (
               <div key={index} className="text-zinc-400 flex items-center space-x-2">
                 <span>{feature}</span>
               </div>
@@ -188,28 +183,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Technology Section */}
-      <section id="technology" className="py-20 px-4 sm:px-6 lg:px-8 bg-zinc-900/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Built with Modern Tools</h2>
-            <p className="text-xl text-zinc-400">Enterprise-grade technology stack for reliable performance</p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {techStack.map((tech, index) => (
-              <div key={index} className="bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-4 text-center hover:bg-zinc-800/70 transition-colors">
-                <h3 className="font-semibold text-amber-400 mb-1">{tech.name}</h3>
-                <p className="text-xs text-zinc-400">{tech.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Videos?</h2>
           <p className="text-xl text-zinc-400 mb-8">
             Join thousands of content creators who trust ClipBox for their video processing needs
