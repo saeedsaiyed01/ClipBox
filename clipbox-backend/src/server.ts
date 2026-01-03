@@ -1,10 +1,12 @@
 import cors from 'cors';
 import dotenv from 'dotenv';
 import Express, { Application, NextFunction, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { errorHandler } from './../middleware/errorHandler.js';
 import processRoutes from './api/routes/process.routes.js';
+import authRoutes from './routes/auth.js';
 import logger from './utils/logger.js';
 import { ensurePublicDir, ensureUploadsDir } from './utils/paths.js';
 // Load environment variables
@@ -12,6 +14,11 @@ dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '.
 
 const app: Application = Express();
 const PORT: number = parseInt(process.env.PORT || '4000', 10);
+
+// --- Database Connection ---
+mongoose.connect(process.env.MONGO_URI!)
+  .then(() => logger.info('MongoDB connected'))
+  .catch(err => logger.error('MongoDB connection error', { error: err.message }));
 
 // --- Middleware ---
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' || 'https://clip-box-fe.vercel.app' }));
@@ -31,6 +38,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // --- Routes ---
+app.use('/auth', authRoutes);
 app.use('/api', processRoutes);
 
 // --- Error Handling ---

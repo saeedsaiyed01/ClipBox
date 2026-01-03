@@ -2,6 +2,7 @@
 
 import { Download, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useAuthUser } from "../../lib/useAuthUser";
 import { checkJobStatus, startProcessing } from "../lib/api";
 import { ProcessStatus, StudioSettings } from "../types";
 import BackgroundPanel from "./BackgroundPanel";
@@ -9,6 +10,7 @@ import LayoutPanel from "./LayoutPanel";
 import PreviewWindow from "./PreviewWindow";
 import SettingsPanel from "./SettingsPanel";
 import UploadDropzone from "./UploadDropzone";
+import UserBadge from "./UserBadge";
 
 /**
  * Custom Hook for polling the job status
@@ -67,7 +69,8 @@ export default function Studio() {
   const [file, setFile] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [settings, setSettings] = useState<StudioSettings>(defaultSettings);
-  
+  const { user, loading: loadingUser, signOut } = useAuthUser();
+   
   const [status, setStatus] = useState<ProcessStatus>('idle');
   const [jobId, setJobId] = useState<string | null>(null);
   const [finalUrl, setFinalUrl] = useState<string | null>(null);
@@ -120,8 +123,15 @@ export default function Studio() {
       setStatus('processing');
       setMessage('Processing... this may take a moment.');
     } catch (err) {
+      const error = err as Error;
       setStatus('error');
-      setMessage((err as Error).message);
+
+      // Handle rate limiting errors specifically
+      if (error.message.includes('No credits remaining')) {
+        setMessage('You have used all your credits for this month. Upgrade your plan for more credits.');
+      } else {
+        setMessage(error.message);
+      }
     }
   };
 
@@ -180,6 +190,15 @@ export default function Studio() {
     setSettings((prev) => ({ ...prev, ...newSettings }));
   };
 
+  const handleLogout = () => {
+    signOut();
+    window.location.href = '/';
+  };
+
+  const handleLogin = () => {
+    window.location.href = 'http://localhost:4000/auth/google';
+  };
+
   /**
    * Remove the current video and go back to dropzone
    */
@@ -198,7 +217,6 @@ export default function Studio() {
 
   const isProcessing = status === 'uploading' || status === 'processing';
 
-  // --- Render ---
   const renderStatusContent = () => {
     if (status === 'processing') {
       return (
@@ -214,7 +232,7 @@ export default function Studio() {
             />
           </div>
           <p className="mt-3 text-xs text-zinc-500">
-            Hang tight—longer clips can take a little more time to render.
+            Hang tight - longer clips can take a little more time to render.
           </p>
         </>
       );
@@ -297,11 +315,19 @@ export default function Studio() {
         </aside>
 
         <section className="relative flex min-h-[60vh] flex-col bg-[#0F0F0F] lg:sticky lg:top-0 lg:h-screen">
-          <div className="absolute right-8 top-8 z-20">
-            {primaryAction}
+          <div className="flex flex-col gap-3 border-b border-white/10 bg-[#0F0F0F]/90 px-6 pb-4 pt-6 backdrop-blur lg:flex-row lg:items-center lg:justify-between lg:px-12">
+            <UserBadge
+              user={user}
+              loading={loadingUser}
+              onSignOut={handleLogout}
+              onSignIn={handleLogin}
+            />
+            <div className="flex items-center gap-3 self-start lg:self-auto">
+              {primaryAction}
+            </div>
           </div>
 
-          <div className="flex flex-1 items-center justify-center px-6 py-12 lg:px-12">
+          <div className="flex flex-1 items-center justify-center px-6 py-10 lg:px-12">
             <div className="w-full max-w-5xl">
               {videoPreviewUrl ? (
                 <PreviewWindow

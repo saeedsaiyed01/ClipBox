@@ -15,8 +15,8 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "ClipBox - Professional Video Processing & Custom Backgrounds",
-  description: "Transform your videos with custom backgrounds, aspect ratios, and professional effects. Upload, customize, and export stunning videos in your browser.",
+  title: "Clipbox",
+  description: "Generate videos instantly",
 };
 
 export default function RootLayout({
@@ -25,10 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${instrumentSerif.variable} antialiased`}
-      >
+    <html lang="en" className={`${inter.variable} ${instrumentSerif.variable}`}>
+      <body className={`${inter.className}`}>
         {children}
       </body>
     </html>

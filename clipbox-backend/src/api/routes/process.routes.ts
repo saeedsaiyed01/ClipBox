@@ -2,7 +2,10 @@ import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
 import { getJobStatus, processVideo } from '../../../controllers/process.controller.js';
+import { checkCredits } from '../../middleware/rateLimit';
+import { requireAuth } from '../../middleware/requireAuth';
 import logger from '../../utils/logger.js';
+
 const router = Router();
 
 // --- File Upload Configuration ---
@@ -65,7 +68,22 @@ const imageUpload = multer({
 });
 
 // Define the routes
-router.post('/process', upload.single('video'), processVideo);
+router.get('/me', requireAuth, (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not found' });
+  }
+  res.json({
+    name: req.user.name,
+    email: req.user.email,
+    avatar: req.user.avatar,
+    plan: req.user.plan,
+    credits: req.user.credits,
+    creditsResetDate: req.user.creditsResetDate,
+    videoGenerationsCount: req.user.videoGenerationsCount,
+  });
+});
+
+router.post('/process', requireAuth, checkCredits, upload.single('video'), processVideo);
 router.post('/upload-image', imageUpload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No image file provided' });

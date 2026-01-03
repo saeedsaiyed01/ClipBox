@@ -1,9 +1,25 @@
 "use client";
 
+import Arrowright from "@/components/icons/arrow-right";
 import { Circle, Download, ExternalLink, Eye, Github, Monitor, Palette, Play, ZoomIn } from "lucide-react";
 import Link from "next/link";
+import { useAuthUser } from "../../lib/useAuthUser";
+import UserBadge from "./UserBadge";
 
 export default function LandingPage() {
+  const { user, loading, signOut } = useAuthUser();
+
+  const handleSignIn = () => {
+    window.location.href = "http://localhost:4000/auth/google";
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    window.location.href = "/";
+  };
+
+  const primaryCtaHref = user ? "/studio" : "/signup";
+
   const features = [
     {
       icon: Palette,
@@ -55,13 +71,6 @@ export default function LandingPage() {
     }
   ];
 
-  const featureHighlights = [
-    "✨ Custom backgrounds and gradients",
-    "📐 Perfect aspect ratios for any platform",
-    "🔍 Precise zoom and positioning controls",
-    "🎭 Modern border radius effects",
-    "⚡ Real-time preview and instant export"
-  ];
 
 
 
@@ -72,36 +81,42 @@ export default function LandingPage() {
       <header className="border-b border-zinc-800/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-zinc-900 font-bold text-lg">C</span>
-              </div>
-              <span className="text-xl font-bold">ClipBox</span>
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
+              <span className="text-zinc-900 font-bold text-lg">C</span>
             </div>
-            
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-zinc-300 hover:text-white transition-colors">Features</a>
-              <a href="#how-it-works" className="text-zinc-300 hover:text-white transition-colors">How it Works</a>
-              <a href="https://github.com" className="text-zinc-300 hover:text-white transition-colors flex items-center space-x-1">
-                <Github className="w-4 h-4" />
-                <span>GitHub</span>
-              </a>
-            </nav>
+            <span className="text-xl font-bold">ClipBox</span>
+          </div>
+          
 
-            <Link 
-              href="/studio"
-              className="bg-amber-500 hover:bg-amber-600 text-zinc-900 px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              Try ClipBox Free
-            </Link>
+            <div className="flex items-center space-x-4">
+              {loading ? (
+                <UserBadge user={null} loading variant="compact" />
+              ) : user ? (
+                <UserBadge
+                  user={user}
+                  onSignOut={handleSignOut}
+                  variant="compact"
+                  className="border-amber-400/40"
+                />
+              ) : (
+                <button
+                  onClick={handleSignIn}
+                  className="bg-amber-500 hover:bg-amber-600 text-zinc-900 px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                >
+                  <span>Login</span>
+                  <Arrowright className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 mt-20">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent serif-text">
             Transform Your Videos with<br />
             <span className="text-amber-400">Professional Effects</span>
           </h1>
@@ -113,10 +128,10 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
             <Link 
-              href="/studio"
+              href={primaryCtaHref}
               className="bg-amber-500 hover:bg-amber-600 text-zinc-900 px-8 py-4 rounded-lg font-semibold text-lg transition-colors flex items-center space-x-2"
             >
-              <span>Start Creating Now</span>
+              <span>Try It Now</span>
               <ExternalLink className="w-5 h-5" />
             </Link>
             
@@ -127,13 +142,7 @@ export default function LandingPage() {
           </div>
 
           {/* Feature highlights */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-4xl mx-auto text-sm">
-            {featureHighlights.map((feature, index) => (
-              <div key={index} className="text-zinc-400 flex items-center space-x-2">
-                <span>{feature}</span>
-              </div>
-            ))}
-          </div>
+        
         </div>
       </section>
 
@@ -141,7 +150,7 @@ export default function LandingPage() {
       <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-zinc-900/50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Everything You Need to Create</h2>
+            <h2 className="text-4xl font-bold mb-4 serif-text">Everything You Need to Create</h2>
             <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
               Powerful video processing tools that deliver professional results without the complexity
             </p>
@@ -153,7 +162,7 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-center mb-4">
                   <feature.icon className="w-6 h-6 text-amber-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <h3 className="text-xl font-semibold mb-2 serif-text">{feature.title}</h3>
                 <p className="text-zinc-400">{feature.description}</p>
               </div>
             ))}
@@ -165,7 +174,7 @@ export default function LandingPage() {
       <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
+            <h2 className="text-4xl font-bold mb-4 serif-text">How It Works</h2>
             <p className="text-xl text-zinc-400">Three simple steps to professional video transformation</p>
           </div>
 
@@ -175,7 +184,7 @@ export default function LandingPage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-zinc-900">{step.step}</span>
                 </div>
-                <h3 className="text-2xl font-semibold mb-4">{step.title}</h3>
+                <h3 className="text-2xl font-semibold mb-4 serif-text">{step.title}</h3>
                 <p className="text-zinc-400">{step.description}</p>
               </div>
             ))}
@@ -186,7 +195,7 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Videos?</h2>
+          <h2 className="text-4xl font-bold mb-6 serif-text">Ready to Transform Your Videos?</h2>
           <p className="text-xl text-zinc-400 mb-8">
             Join thousands of content creators who trust ClipBox for their video processing needs
           </p>
@@ -249,10 +258,11 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-zinc-800/50 mt-8 pt-8 text-center text-zinc-400">
-            <p>&copy; 2024 ClipBox. All rights reserved. Built with ❤️ for content creators.</p>
+            <p>&copy; 2024 ClipBox. All rights reserved. Crafted for content creators.</p>
           </div>
         </div>
       </footer>
     </div>
   );
 }
+

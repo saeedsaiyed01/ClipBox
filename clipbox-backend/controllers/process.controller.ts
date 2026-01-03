@@ -3,12 +3,21 @@ import { NextFunction, Request, Response } from 'express';
 import { videoQueue } from '../src/queues/video.queue.js';
 import { StudioSettings } from '../src/types';
 import logger from '../src/utils/logger.js';
+import User from '../src/models/User';
 
 // Controller for POST /api/process
 export const processVideo = async (req: Request, res: Response, next: NextFunction) => {
   logger.info('Received file upload request', { ip: req.ip, userAgent: req.get('User-Agent') });
 
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    if (req.user.videoGenerationsCount >= 5) {
+      return res.status(403).json({ error: 'Video generation limit reached (5 free generations)' });
+    }
+
     // Validation
     if (!req.file) {
       logger.warn('Upload attempt without file');
@@ -47,6 +56,10 @@ export const processVideo = async (req: Request, res: Response, next: NextFuncti
       videoPath: req.file.path,
       settings: settings
     });
+
+    // Increment videoGenerationsCount and save user
+    req.user.videoGenerationsCount += 1;
+    await req.user.save();
 
     logger.info('Job added to queue', { jobId: job.id });
     res.json({ jobId: job.id });

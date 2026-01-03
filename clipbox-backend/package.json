@@ -21,6 +21,7 @@
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "ffmpeg-static": "^5.2.0",
+    "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
     "tsx": "^4.0.0",
     "winston": "^3.17.0"
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/winston": "^2.4.4",
     "tsx": "^4.0.0"
