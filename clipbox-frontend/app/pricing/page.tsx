@@ -11,9 +11,10 @@ export default function PricingPage() {
   const { user, loading, signOut } = useAuthUser();
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
 
-  const handleSignIn = () => {
-    window.location.href = "http://localhost:4000/auth/google";
-  };
+ const handleSignIn = () => {
+  window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`;
+};
+
 
   const handleSignOut = () => {
     signOut();

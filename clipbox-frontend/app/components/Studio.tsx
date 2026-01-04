@@ -195,9 +195,10 @@ export default function Studio() {
     window.location.href = '/';
   };
 
-  const handleLogin = () => {
-    window.location.href = 'http://localhost:4000/auth/google';
-  };
+ const handleLogin = () => {
+  window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`;
+};
+
 
   /**
    * Remove the current video and go back to dropzone

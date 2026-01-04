@@ -18,9 +18,10 @@ function SignUpHandler() {
     }
   }, [searchParams, router]);
 
-  const handleGoogleSignIn = () => {
-    window.location.href = 'http://localhost:4000/auth/google';
-  };
+ const handleGoogleSignIn = () => {
+  window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`;
+};
+
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center p-4">
