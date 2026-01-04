@@ -46,6 +46,15 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   logger.error('Unhandled error', { error: err.message, stack: err.stack, url: req.url });
   errorHandler(err, req, res, next);
 });
+if (process.env.NODE_ENV === "production") {
+  import("./worker")
+    .then(() => {
+      console.log("Worker started inside web service (free-tier mode)");
+    })
+    .catch((err) => {
+      console.error("Failed to start worker", err);
+    });
+}
 
 app.listen(PORT, '0.0.0.0',() => {
   logger.info(`Backend API listening on port ${PORT}`, { port: PORT, env: process.env.NODE_ENV });
