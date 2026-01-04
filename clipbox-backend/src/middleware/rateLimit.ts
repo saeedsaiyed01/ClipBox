@@ -38,7 +38,7 @@ export const checkCredits = async (req: AuthenticatedRequest, res: Response, nex
       user.creditsResetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       await user.save();
     }
-
+  
     // Check if user has credits
     if (user.credits <= 0) {
       return res.status(429).json({

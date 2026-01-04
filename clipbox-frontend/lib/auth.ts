@@ -36,7 +36,7 @@ export function removeToken(): void {
   document.cookie = `${AUTH_COOKIE_NAME}=; path=/; max-age=0`;
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const handler = NextAuth({
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID || 'dummy',
@@ -44,3 +44,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
 });
+
+export { handler as GET, handler as POST };

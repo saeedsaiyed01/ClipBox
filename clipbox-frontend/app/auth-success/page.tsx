@@ -1,10 +1,10 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { setToken } from '../../lib/auth';
 
-export default function AuthSuccessPage() {
+function AuthSuccessHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -25,5 +25,19 @@ export default function AuthSuccessPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white">
       <p>Processing authentication...</p>
     </div>
+  );
+}
+
+export default function AuthSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white">
+          <p>Processing authentication...</p>
+        </div>
+      }
+    >
+      <AuthSuccessHandler />
+    </Suspense>
   );
 }
