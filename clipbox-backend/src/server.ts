@@ -47,6 +47,6 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   errorHandler(err, req, res, next);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0',() => {
   logger.info(`Backend API listening on port ${PORT}`, { port: PORT, env: process.env.NODE_ENV });
 });

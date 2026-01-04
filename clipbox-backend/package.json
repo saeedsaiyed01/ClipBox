@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "npx tsx src/server.ts & npx tsx src/worker.ts",
+    "start": "npx tsx src/server.ts",
     "worker": "npx tsx src/worker.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,15 +14,16 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "axios": "^1.13.2",
     "bullmq": "^5.63.0",
     "canvas": "^3.2.0",
     "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
-    "mongoose": "^8.x",
     "ffmpeg-static": "^5.2.0",
     "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.x",
     "multer": "^2.0.2",
     "tsx": "^4.0.0",
     "winston": "^3.17.0"
