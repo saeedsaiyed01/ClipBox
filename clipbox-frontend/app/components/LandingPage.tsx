@@ -10,7 +10,7 @@ export default function LandingPage() {
   const { user, loading, signOut } = useAuthUser();
 
   const handleSignIn = () => {
-    window.location.href = "http://localhost:4000/auth/google";
+    window.location.href = "/signup";
   };
 
   const handleSignOut = () => {
