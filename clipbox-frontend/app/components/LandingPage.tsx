@@ -145,7 +145,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto mt-12">
             <video
               controls
-              className="w-full rounded-xl shadow-lg border border-zinc-700/50"
+              className="w-full rounded-xl shadow-xl border-2 border-amber-500/20 bg-zinc-800/50"
               preload="metadata"
             >
               <source src="/finalll.mp4" type="video/mp4" />
