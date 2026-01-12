@@ -127,18 +127,30 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-            <Link 
+            <Link
               href={primaryCtaHref}
               className="bg-amber-500 hover:bg-amber-600 text-zinc-900 px-8 py-4 rounded-lg font-semibold text-lg transition-colors flex items-center space-x-2"
             >
               <span>Try It Now</span>
               <ExternalLink className="w-5 h-5" />
             </Link>
-            
+
             <button className="border border-zinc-700 hover:border-zinc-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors flex items-center space-x-2">
               <Play className="w-5 h-5" />
               <span>Watch Demo</span>
             </button>
+          </div>
+
+          {/* Demo Video */}
+          <div className="max-w-4xl mx-auto mt-12">
+            <video
+              controls
+              className="w-full rounded-xl shadow-lg border border-zinc-700/50"
+              preload="metadata"
+            >
+              <source src="/finalll.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
 
           {/* Feature highlights */}
