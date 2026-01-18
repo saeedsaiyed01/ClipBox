@@ -20,9 +20,38 @@ mongoose.connect(process.env.MONGO_URI!)
   .then(() => logger.info('MongoDB connected'))
   .catch(err => logger.error('MongoDB connection error', { error: err.message }));
 
+
+
+  const allowedOrigins = [
+  "http://localhost:3000",
+  "https://clip-box-fe.vercel.app",
+  "https://tryclipbox.vercel.app", // <--- ADD THIS (Your current live site)
+  process.env.FRONTEND_URL // Add the env var if it exists
+].filter(Boolean) as string[]; // Remove undefined values
+
+
+
+
 // --- Middleware ---
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' || 'https://clip-box-fe.vercel.app' }));
 app.use(Express.json());
+
+
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin); // Log blocked origins for debugging
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true // Important if you ever use Cookies/Sessions
+}));
+
 app.use('/public', Express.static(path.join(process.cwd(), 'public')));
 app.use('/api/uploads', Express.static(process.env.UPLOAD_DIR || 'uploads'));
 ensureUploadsDir();
