@@ -3,7 +3,6 @@ import { NextFunction, Request, Response } from 'express';
 import { videoQueue } from '../src/queues/video.queue.js';
 import { StudioSettings } from '../src/types';
 import logger from '../src/utils/logger.js';
-import User from '../src/models/User';
 
 // Controller for POST /api/process
 export const processVideo = async (req: Request, res: Response, next: NextFunction) => {
@@ -14,9 +13,8 @@ export const processVideo = async (req: Request, res: Response, next: NextFuncti
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    if (req.user.videoGenerationsCount >= 5) {
-      return res.status(403).json({ error: 'Video generation limit reached (5 free generations)' });
-    }
+    // Video generation limit is now handled by checkCredits middleware
+
 
     // Validation
     if (!req.file) {
