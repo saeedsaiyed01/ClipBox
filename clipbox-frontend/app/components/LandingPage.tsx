@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 
 import Arrowright from "@/components/icons/arrow-right";
 import { Circle, Download, ExternalLink, Eye, Monitor, Palette, Play, ZoomIn } from "lucide-react";
@@ -8,6 +9,15 @@ import UserBadge from "./UserBadge";
 
 export default function LandingPage() {
   const { user, loading, signOut } = useAuthUser();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleSignIn = () => {
     window.location.href = "/signup";
@@ -85,46 +95,79 @@ export default function LandingPage() {
       </div>
 
       {/* Header */}
-      <header className="relative z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center space-x-2">
-              <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-                <span className="text-black font-bold text-lg font-mono">C</span>
-              </div>
-              <span className="text-xl font-bold tracking-tight">ClipBox</span>
-            </div>
-
-            {/* Desktop Nav - "Inspiration" style pill nav */}
-            <nav className="hidden md:flex items-center space-x-1 p-1 rounded-full bg-white/5 border border-white/5 backdrop-blur-md">
-                <a href="#features" className="px-4 py-1.5 text-sm text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-white/5">Features</a>
-                <a href="#how-it-works" className="px-4 py-1.5 text-sm text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-white/5">How it Works</a>
-                <a href="/pricing" className="px-4 py-1.5 text-sm text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-white/5">Pricing</a>
-            </nav>
-
-            <div className="flex items-center space-x-4">
-              {loading ? (
-                <UserBadge user={null} loading variant="compact" />
-              ) : user ? (
-                <UserBadge
-                  user={user}
-                  onSignOut={handleSignOut}
-                  variant="compact"
-                  className="border-amber-400/40"
-                />
-              ) : (
-                <button
-                  onClick={handleSignIn}
-                  className="group relative inline-flex h-9 items-center justify-center overflow-hidden rounded-full bg-zinc-900 px-6 font-medium text-zinc-300 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2 focus:ring-offset-zinc-900 border border-zinc-800"
-                >
-                   <span className="mr-2">Login</span>
-                   <Arrowright className="w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-              )}
-            </div>
+      {/* Floating Animated Header */}
+      <div className={`fixed top-0 left-0 right-0 z-50 flex justify-center transition-all duration-500 ease-in-out ${scrolled ? "pt-4" : "pt-0 md:pt-6"}`}>
+        <header 
+          className={`
+            relative transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+            flex items-center justify-between
+            ${scrolled 
+              ? "w-[90%] md:w-[600px] bg-[#121212]/80 backdrop-blur-xl border border-white/10 rounded-full py-3 px-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]" 
+              : "w-full max-w-7xl bg-black/20 backdrop-blur-sm border-b border-white/[0.05] py-4 px-4 sm:px-6 lg:px-8"
+            }
+          `}
+        >
+          {/* Logo */}
+          <div className="flex items-center gap-3 shrink-0">
+             <img 
+               src="/logo-clipbox.png" 
+               alt="ClipBox" 
+               className="transition-all duration-500 rounded-xl h-10 w-auto"
+             />
+             <span className={`font-bold tracking-tight text-white transition-all duration-500 ${scrolled ? "text-lg opacity-0 w-0 overflow-hidden" : "text-xl opacity-100"}`}>
+               ClipBox
+             </span>
           </div>
-        </div>
-      </header>
+
+          {/* Desktop Nav - Centered & Collapsible */}
+          <nav className={`hidden md:flex items-center gap-4 transition-all duration-500 ${scrolled ? "rotate-0 opacity-100 translate-x-0" : "translate-y-0"}`}>
+              {/* On scroll, we simplify the nav or keep it? The prompt implies a "pill" look. 
+                  Let's keep the links simple text in the scrolled state for a clean look. 
+              */}
+              {[
+                { name: 'Features', href: '#features' },
+                { name: 'How it Works', href: '#how-it-works' },
+                { name: 'Pricing', href: '/pricing' }
+              ].map((item) => (
+                <a 
+                  key={item.name} 
+                  href={item.href} 
+                  className={`text-sm font-medium transition-colors hover:text-white ${scrolled ? "text-zinc-400" : "text-zinc-300"}`}
+                >
+                  {item.name}
+                </a>
+              ))}
+          </nav>
+
+          {/* Auth / Login */}
+          <div className="flex items-center gap-2 shrink-0">
+            {loading ? (
+              <UserBadge user={null} loading variant="compact" />
+            ) : user ? (
+              <UserBadge
+                user={user}
+                onSignOut={handleSignOut}
+                variant="compact"
+                className="border-amber-400/40"
+              />
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className={`
+                  group relative inline-flex items-center justify-center overflow-hidden rounded-full 
+                  transition-all duration-500 font-medium 
+                  bg-[#f5c249] text-black h-10 px-7 text-sm hover:bg-[#eeb12d] shadow-[0_0_20px_-5px_rgba(245,194,73,0.3)]
+                `}
+              >
+                 <span className={`${scrolled ? "mr-0" : "mr-2"} tracking-wide font-bold`}>
+                   {scrolled ? "Login" : "Login"}
+                 </span>
+                 <Arrowright className={`transition-transform duration-300 ${scrolled ? "hidden" : "w-3.5 h-3.5 group-hover:translate-x-1"}`} />
+              </button>
+            )}
+          </div>
+        </header>
+      </div>
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
@@ -136,14 +179,14 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-5xl sm:text-7xl lg:text-8xl font-medium mb-8 tracking-tight text-white serif-text">
-            Shape your canvas, <br className="hidden sm:block" />
+            Transform Your Videos with <br className="hidden sm:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-orange-500">
-              export polish.
+              Professional Effects
             </span>
           </h1>
           
           <p className="text-xl text-zinc-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-            ClipBox is the modern studio for content creators. Process videos, apply cinematic styling, and export for any platform in seconds.
+            ClipBox makes professional video processing simple. Upload your video, customize backgrounds and styling, and export stunning results - all from your browser.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-20">

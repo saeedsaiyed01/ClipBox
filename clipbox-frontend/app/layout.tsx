@@ -17,6 +17,9 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: "Clipbox",
   description: "Generate videos instantly",
+  icons: {
+    icon: "/favicon-new.png",
+  },
 };
 
 export default function RootLayout({

@@ -10,6 +10,7 @@ import { AspectRatio } from '../types';
 import logger from '../utils/logger.js';
 import {
   PUBLIC_DIR,
+  ROOT_DIR,
   UPLOADS_DIR,
   ensurePublicDir,
   ensureUploadsDir
@@ -101,7 +102,36 @@ export const processVideoJob = async (
 
   /* ----------------------------- BACKGROUND ----------------------------- */
 
-  if (background.type === 'solid') {
+  /* ----------------------------- INPUT INDICES --------------------------- */
+  const inputs: string[] = [inputPath];
+  const videoIdx = 0;
+  let bgImageIdx = -1;
+  let maskIdx = -1;
+
+  // Resolve Background Image Path
+  let bgImagePath: string | null = null;
+  if (background.type === 'image' && background.value) {
+    const relativePath = background.value.startsWith('/') 
+      ? background.value.slice(1) 
+      : background.value;
+    const fullPath = path.join(ROOT_DIR, relativePath);
+    if (fs.existsSync(fullPath)) {
+      bgImagePath = fullPath;
+      inputs.push(bgImagePath);
+      bgImageIdx = inputs.length - 1;
+    } else {
+      logger.warn(`Background image not found: ${fullPath}`);
+    }
+  }
+
+  /* ----------------------------- BACKGROUND ----------------------------- */
+
+  if (bgImageIdx !== -1) {
+    // Scale and crop image to cover the canvas
+    filters.push(
+      `[${bgImageIdx}:v]scale=${canvasW}:${canvasH}:force_original_aspect_ratio=increase,crop=${canvasW}:${canvasH}[bg]`
+    );
+  } else if (background.type === 'solid') {
     filters.push(`color=color=${background.value}:size=${canvasW}x${canvasH}[bg]`);
   } else if (background.type === 'gradient') {
     const { c0, c1, horizontal } = parseGradient(background.value);
@@ -116,7 +146,7 @@ export const processVideoJob = async (
 
   /* ----------------------------- VIDEO SCALE ----------------------------- */
 
-  filters.push(`[0:v]scale=${scaleW}:${scaleH}[scaled]`);
+  filters.push(`[${videoIdx}:v]scale=${scaleW}:${scaleH}[scaled]`);
 
   let outputStream = '[composite]';
   let maskPath: string | null = null;
@@ -127,9 +157,14 @@ export const processVideoJob = async (
     const radius = Math.min(borderRadius, Math.floor(Math.min(scaleW, scaleH) / 2));
     maskPath = path.join(PUBLIC_DIR, `mask-${job.id}.png`);
     generateRoundedMask(scaleW, scaleH, radius, maskPath);
+    
+    // Add mask to inputs
+    inputs.push(maskPath);
+    maskIdx = inputs.length - 1;
 
     filters.push(`[scaled]format=yuva420p[video_alpha]`);
-    filters.push(`[1:v]scale=${scaleW}:${scaleH}[mask]`);
+    // Use dynamic mask index
+    filters.push(`[${maskIdx}:v]scale=${scaleW}:${scaleH}[mask]`);
     filters.push(`[video_alpha][mask]alphamerge[rounded_video]`);
     filters.push(`[bg][rounded_video]overlay=${overlayX}:${overlayY}[final]`);
     outputStream = '[final]';
@@ -139,16 +174,17 @@ export const processVideoJob = async (
 
   /* ----------------------------- FFMPEG ----------------------------- */
 
-  const ffmpegArgs = ['-i', inputPath];
-
-  if (maskPath) {
-    ffmpegArgs.push('-i', maskPath);
-  }
+  const ffmpegArgs: string[] = [];
+  
+  // Add all inputs
+  inputs.forEach(input => {
+    ffmpegArgs.push('-i', input);
+  });
 
   ffmpegArgs.push(
     '-filter_complex', filters.join(';'),
     '-map', outputStream,
-    '-map', '0:a?',
+    '-map', '0:a?', // Audio from video (input 0)
     '-c:v', 'libx264',
     '-preset', 'ultrafast',
     '-crf', '28',
