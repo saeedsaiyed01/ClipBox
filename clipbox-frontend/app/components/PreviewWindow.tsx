@@ -7,9 +7,19 @@ const getAspectRatioCSS = (ratio: StudioSettings["aspectRatio"]) => {
 export default function PreviewWindow({
   settings,
   videoPreviewUrl,
+  videoRef,
+  onTimeUpdate,
+  onLoadedMetadata,
+  onPlay,
+  onPause,
 }: {
   settings: StudioSettings;
   videoPreviewUrl: string;
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
+  onTimeUpdate?: () => void;
+  onLoadedMetadata?: () => void;
+  onPlay?: () => void;
+  onPause?: () => void;
 }) {
   const { background, aspectRatio, borderRadius, zoom } = settings;
   const useImageBackground = background.type === "image" && background.value;
@@ -43,7 +53,11 @@ export default function PreviewWindow({
         {/* Background Image Layer (Optional) */}
         {useImageBackground && (
           <img
-            src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}${background.value}`}
+            src={
+              ['/image1.jpg', '/image2.jpeg'].includes(background.value) 
+                ? background.value 
+                : `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}${background.value}`
+            }
             alt="Background"
             className="absolute inset-0 h-full w-full object-cover opacity-70"
           />
@@ -71,12 +85,18 @@ export default function PreviewWindow({
             }}
           >
              <video
+              ref={videoRef}
               className="h-full w-full object-cover" 
               src={videoPreviewUrl}
               autoPlay
               loop
               muted
               playsInline
+              // Forward events
+              onTimeUpdate={onTimeUpdate}
+              onLoadedMetadata={onLoadedMetadata}
+              onPlay={onPlay}
+              onPause={onPause}
             />
           </div>
         </div>

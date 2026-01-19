@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { uploadImage } from '../lib/api';
 import { AppBackground, StudioSettings } from '../types';
 
@@ -21,6 +21,11 @@ const PRESET_GRADIENTS: { name: string, value: string }[] = [
   { name: 'Gray', value: 'linear-gradient(to right, #434343, #000000)' },
 ];
 
+const PRESET_IMAGES = [
+  { name: 'Preset 1', value: '/image1.jpg' },
+  { name: 'Preset 2', value: '/image2.jpeg' },
+];
+
 // Custom Color Picker Component
 interface CustomColorPickerProps {
   color: string;
@@ -29,7 +34,18 @@ interface CustomColorPickerProps {
 
 function CustomColorPicker({ color, onChange }: CustomColorPickerProps) {
   const [hsl, setHsl] = useState(() => hexToHsl(color));
+
   const [rgb, setRgb] = useState(() => hexToRgb(color));
+
+  // Sync internal state when prop changes
+  useEffect(() => {
+    // Only update if the color is a valid hex to avoid breaking the UI with NaNs
+    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    if (hexRegex.test(color)) {
+      setHsl(hexToHsl(color));
+      setRgb(hexToRgb(color));
+    }
+  }, [color]);
 
   const handleHueChange = (value: number) => {
     const newHsl = { ...hsl, h: value };
@@ -209,7 +225,14 @@ const PRESET_COLORS: { name: string, value: string, color: string }[] = [
 export default function BackgroundPanel({ settings, setSettings, disabled }: BackgroundPanelProps) {
   const [uploading, setUploading] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  // tempColor tracks exactly what the user types in the input
   const [tempColor, setTempColor] = useState(settings.background.type === 'solid' ? settings.background.value : '#1E293B');
+
+  // safeColor is used for the ColorPicker and Previews.
+  // If tempColor is valid, use it. Otherwise, fall back to the committed settings value.
+  // This prevents the UI from breaking or flashing while typing incomplete hex codes.
+  const isValidHex = (hex: string) => /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex);
+  const safeColor = isValidHex(tempColor) ? tempColor : (settings.background.type === 'solid' ? settings.background.value : '#1E293B');
 
   const setBackground = (bg: AppBackground) => {
     setSettings({ background: bg });
@@ -223,14 +246,35 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
     setBackground({ type: 'solid', value: color });
   };
 
-  const handleHexInputChange = (hex: string) => {
-    // Validate hex color format
-    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-    if (hexRegex.test(hex) || hex === '') {
-      setTempColor(hex);
-      if (hexRegex.test(hex)) {
-        setBackground({ type: 'solid', value: hex });
-      }
+  const handleHexInputChange = (input: string) => {
+    let hex = input;
+    // Auto-add hash if missing and it looks like a hex code
+    if (!hex.startsWith('#') && /^[0-9A-Fa-f]+$/.test(hex)) {
+        hex = '#' + hex;
+    }
+    
+    setTempColor(input); // Clean valid typing is hard, better to let them type freely, but process logic on 'hex'
+    
+    // Check validity of the processed 'hex'
+    if (isValidHex(hex)) {
+      setBackground({ type: 'solid', value: hex });
+    }
+  };
+
+  const handleInputBlur = () => {
+    // When leaving the field, either format the valid hex or revert to safe color
+    let hex = tempColor;
+    if (!hex.startsWith('#') && /^[0-9A-Fa-f]+$/.test(hex)) {
+        hex = '#' + hex;
+    }
+
+    if (isValidHex(hex)) {
+        // Normalize to uppercase 6-digit (optional, but nice) or just keep as is
+        setTempColor(hex.toUpperCase());
+        setBackground({ type: 'solid', value: hex.toUpperCase() });
+    } else {
+        // Revert to last known good color
+        setTempColor(safeColor);
     }
   };
 
@@ -256,27 +300,40 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
   };
 
   return (
-    <div className="panel-section">
-      <h4 className="ui-label">Background</h4>
+    <div className="flex flex-col gap-4">
+      <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Background</h4>
       
       {/* --- Tab Buttons --- */}
-      <div className="button-group">
+      {/* --- Tab Buttons --- */}
+      <div className="grid grid-cols-3 gap-2">
         <button
-          className={`btn-toggle ${settings.background.type === 'gradient' ? 'active' : ''}`}
+          className={`flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition ${
+            settings.background.type === 'gradient'
+              ? 'bg-[#f5c249] text-black border-[#f5c249]'
+              : 'bg-[#1c1c23] text-zinc-400 border-zinc-800 hover:bg-zinc-700 hover:text-white'
+          }`}
           onClick={() => setBackground({ type: 'gradient', value: PRESET_GRADIENTS[0].value })} // Default to first gradient
           disabled={disabled}
         >
           Gradient
         </button>
         <button
-          className={`btn-toggle ${settings.background.type === 'solid' ? 'active' : ''}`}
+          className={`flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition ${
+            settings.background.type === 'solid'
+              ? 'bg-[#f5c249] text-black border-[#f5c249]'
+              : 'bg-[#1c1c23] text-zinc-400 border-zinc-800 hover:bg-zinc-700 hover:text-white'
+          }`}
           onClick={() => setBackground({ type: 'solid', value: '#1E293B' })}
           disabled={disabled}
         >
           Solid
         </button>
         <button
-          className={`btn-toggle ${settings.background.type === 'image' ? 'active' : ''}`}
+          className={`flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition ${
+            settings.background.type === 'image'
+              ? 'bg-[#f5c249] text-black border-[#f5c249]'
+              : 'bg-[#1c1c23] text-zinc-400 border-zinc-800 hover:bg-zinc-700 hover:text-white'
+          }`}
           onClick={() => setBackground({ type: 'image', value: '' })}
           disabled={disabled}
         >
@@ -286,11 +343,11 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
 
       {/* --- Gradient Panel --- */}
       {settings.background.type === 'gradient' && (
-        <div className="preset-grid">
+        <div className="grid grid-cols-4 gap-2">
           {PRESET_GRADIENTS.map((gradient) => (
             <button
               key={gradient.name}
-              className="preset-btn"
+              className="h-10 w-full rounded-lg border-2 border-transparent transition hover:border-white/50"
               style={{ background: gradient.value }}
               onClick={() => setBackground({ type: 'gradient', value: gradient.value })}
               disabled={disabled}
@@ -301,33 +358,39 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
       
       {/* --- Solid Color Panel --- */}
       {settings.background.type === 'solid' && (
-        <div className="solid-color-panel">
+        <div className="flex flex-col gap-4 p-4 bg-[#0f0f12] border border-white/10 rounded-xl">
           {/* Color Preview and Hex Input */}
-          <div className="color-preview-container">
+          <div className="flex items-center gap-3">
             <div 
-              className="color-preview"
-              style={{ backgroundColor: tempColor }}
+              className="h-9 w-9 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-white/10 transition hover:scale-105 hover:shadow-lg"
+              style={{ backgroundColor: safeColor }}
               onClick={() => setShowColorPicker(!showColorPicker)}
             />
-            <div className="hex-input-container">
+            <div className="flex flex-1 items-center overflow-hidden rounded-lg border border-white/10 bg-[#1A1A1A] h-9 transition focus-within:border-[#f5c249] focus-within:bg-[#262626]">
               <input
                 type="text"
-                className="hex-input"
+                className="h-full flex-1 bg-transparent px-3 text-xs font-mono font-medium text-zinc-100 placeholder-zinc-600 focus:outline-none uppercase"
                 value={tempColor}
                 onChange={(e) => handleHexInputChange(e.target.value)}
+                onBlur={handleInputBlur}
                 placeholder="#000000"
                 disabled={disabled}
+                maxLength={7}
               />
-              <span className="hex-label">HEX</span>
+              <span className="flex h-full items-center justify-center border-l border-white/5 bg-white/5 px-3 text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 select-none">HEX</span>
             </div>
           </div>
 
           {/* Preset Color Palette */}
-          <div className="preset-colors-grid">
+          <div className="grid grid-cols-6 gap-2">
             {PRESET_COLORS.map((color) => (
               <button
                 key={color.name}
-                className={`preset-color-btn ${tempColor.toLowerCase() === color.value.toLowerCase() ? 'active' : ''}`}
+                className={`h-8 w-8 rounded-lg border-2 transition hover:scale-110 hover:shadow shadow-sm ${
+                    safeColor.toLowerCase() === color.value.toLowerCase() 
+                    ? 'border-[#f5c249] shadow-[0_0_0_3px_rgba(245,194,73,0.3)]' 
+                    : 'border-transparent'
+                }`}
                 style={{ backgroundColor: color.color }}
                 onClick={() => handleColorChange(color.value)}
                 title={color.name}
@@ -338,9 +401,9 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
 
           {/* Advanced Color Picker */}
           {showColorPicker && (
-            <div className="color-picker-popup">
+            <div className="animate-in fade-in zoom-in-95 duration-200 p-4 bg-[#09090b] border border-white/10 rounded-xl shadow-2xl">
               <CustomColorPicker
-                color={tempColor}
+                color={safeColor}
                 onChange={handleColorChange}
               />
             </div>
@@ -349,27 +412,62 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
       )}
 
       {/* --- Image Upload Panel --- */}
+      {/* --- Image Panel (Grid Layout) --- */}
       {settings.background.type === 'image' && (
-        <div className="image-upload-panel">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            disabled={disabled || uploading}
-            className="file-input"
-            id="image-upload"
-          />
-          <label htmlFor="image-upload" className="file-label">
-            {uploading ? 'Uploading...' : 'Choose Image'}
-          </label>
-          {settings.background.value && (
-            <div className="image-preview">
+        <div className="grid grid-cols-3 gap-2">
+          {/* 1. Upload Button */}
+          <div className="relative flex flex-col items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 hover:bg-white/10 transition aspect-video group overflow-hidden">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={disabled || uploading}
+              className="absolute inset-0 cursor-pointer opacity-0 z-20"
+              title="Upload custom image"
+            />
+            <div className="flex flex-col items-center gap-1 text-center pointer-events-none z-10">
+              {uploading ? (
+                <span className="text-xs text-zinc-400">Uploading...</span>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500 group-hover:text-zinc-300"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                  <span className="text-[10px] uppercase font-bold text-zinc-500 group-hover:text-zinc-300">Upload</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* 2. Preset Images */}
+          {PRESET_IMAGES.map((img) => (
+            <button
+              key={img.name}
+              className={`relative aspect-video rounded-xl overflow-hidden border-2 transition group ${
+                settings.background.value === img.value
+                  ? 'border-[#f5c249]'
+                  : 'border-transparent hover:border-white/50'
+              }`}
+              onClick={() => setBackground({ type: 'image', value: img.value })}
+              disabled={disabled}
+            >
+              <img src={img.value} alt={img.name} className="w-full h-full object-cover transition group-hover:scale-110" />
+            </button>
+          ))}
+
+          {/* 3. Custom Image (if selected and not a preset) */}
+          {settings.background.value && !PRESET_IMAGES.some(p => p.value === settings.background.value) && (
+            <button
+              className={`relative aspect-video rounded-xl overflow-hidden border-2 border-[#f5c249] transition`}
+              // Allow re-selecting it if we clicked away? 
+              // Actually, if it's visible, it IS selected. But for consistency:
+              onClick={() => setBackground({ type: 'image', value: settings.background.value })}
+              disabled={disabled}
+            >
               <img
                 src={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}${settings.background.value}`}
-                alt="Background preview"
-                style={{ maxWidth: '100%', maxHeight: '100px', borderRadius: '4px' }}
+                alt="Custom"
+                className="w-full h-full object-cover"
               />
-            </div>
+            </button>
           )}
         </div>
       )}
