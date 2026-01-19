@@ -25,9 +25,9 @@ mongoose.connect(process.env.MONGO_URI!)
   const allowedOrigins = [
   "http://localhost:3000",
   "https://clip-box-fe.vercel.app",
-  "https://tryclipbox.vercel.app", // <--- ADD THIS (Your current live site)
-  process.env.FRONTEND_URL // Add the env var if it exists
-].filter(Boolean) as string[]; // Remove undefined values
+  "https://tryclipbox.vercel.app", 
+  process.env.FRONTEND_URL 
+].filter(Boolean) as string[]; 
 
 
 
