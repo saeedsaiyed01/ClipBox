@@ -19,13 +19,17 @@ const RATIOS: { key: AspectRatio, label: string }[] = [
  */
 export default function LayoutPanel({ settings, setSettings, disabled }: LayoutPanelProps) {
   return (
-    <div className="panel-section">
-      <h4 className="ui-label">Aspect Ratio</h4>
-      <div className="button-grid">
+    <div className="flex flex-col gap-4">
+      <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Aspect Ratio</h4>
+      <div className="grid grid-cols-2 gap-2">
         {RATIOS.map((ratio) => (
           <button
             key={ratio.key}
-            className={`option-button ${settings.aspectRatio === ratio.key ? 'active' : ''}`}
+            className={`flex items-center justify-center rounded-lg border px-4 py-3 text-sm font-medium transition active:scale-95 ${
+              settings.aspectRatio === ratio.key
+                ? 'bg-[#f5c249] text-black border-[#f5c249] font-semibold shadow-[0_4px_12px_rgba(245,194,73,0.3)]'
+                : 'bg-[#1c1c23] text-zinc-400 border-zinc-800 hover:bg-zinc-700 hover:text-white'
+            } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => setSettings({ aspectRatio: ratio.key })}
             disabled={disabled}
           >

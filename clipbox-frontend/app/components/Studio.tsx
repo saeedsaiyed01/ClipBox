@@ -1,7 +1,7 @@
 "use client";
 
-import { Download, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Download, Pause, Play, Trash2, Volume2, VolumeX } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthUser } from "../../lib/useAuthUser";
 import { checkJobStatus, startProcessing } from "../lib/api";
 import { ProcessStatus, StudioSettings } from "../types";
@@ -77,7 +77,60 @@ export default function Studio() {
   const [message, setMessage] = useState<string>('');
   const [progress, setProgress] = useState<number>(0);
 
+
+
+  // --- Video Player State ---
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(true); // AutoPlay defaults to true
+  const [isMuted, setIsMuted] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
   // --- Handlers ---
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+    } else {
+      videoRef.current.pause();
+    }
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(!isMuted);
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!videoRef.current) return;
+    const time = parseFloat(e.target.value);
+    videoRef.current.currentTime = time;
+    setCurrentTime(time);
+  };
+
+  const onTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const onLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const onPlay = () => setIsPlaying(true);
+  const onPause = () => setIsPlaying(false);
+
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return "00:00";
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  };
  
   /**
    * Called by the UploadDropzone component when a file is selected.
@@ -203,7 +256,7 @@ export default function Studio() {
   /**
    * Remove the current video and go back to dropzone
    */
-  const handleRemoveVideo = () => {
+   const handleRemoveVideo = () => {
     if (videoPreviewUrl) {
       URL.revokeObjectURL(videoPreviewUrl);
     }
@@ -214,6 +267,10 @@ export default function Studio() {
     setMessage('');
     setJobId(null);
     setProgress(0);
+    // Reset video state
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(true);
   };
 
   const isProcessing = status === 'uploading' || status === 'processing';
@@ -285,10 +342,11 @@ export default function Studio() {
       </button>
     );
 
+
   return (
-    <div className="min-h-screen bg-[#0F0F0F] text-white">
-      <div className="mx-auto flex max-w-[1600px] flex-col lg:grid lg:min-h-screen lg:grid-cols-[28%_72%]">
-        <aside className="border-b border-white/10 px-4 py-6 lg:flex lg:flex-col lg:gap-6 lg:border-b-0 lg:border-r lg:px-6 lg:py-8">
+    <div className="h-screen w-full overflow-hidden bg-[#0F0F0F] text-white">
+      <div className="mx-auto flex h-full max-w-[1600px] flex-col lg:grid lg:grid-cols-[28%_72%]">
+        <aside className="border-b border-white/10 px-4 py-6 lg:flex lg:h-full lg:flex-col lg:gap-6 lg:border-b-0 lg:border-r lg:overflow-y-auto lg:px-6 lg:py-8 scrollbar-hidden">
           <div>
             <h1 className="text-2xl text-white serif-text">Clipbox Studio</h1>
             <p className="mt-2 text-sm text-zinc-400">
@@ -315,8 +373,8 @@ export default function Studio() {
           </div>
         </aside>
 
-        <section className="relative flex min-h-[60vh] flex-col bg-[#0F0F0F] lg:sticky lg:top-0 lg:h-screen">
-          <div className="flex flex-col gap-3 border-b border-white/10 bg-[#0F0F0F]/90 px-6 pb-4 pt-6 backdrop-blur lg:flex-row lg:items-center lg:justify-between lg:px-12">
+        <section className="relative flex min-h-[60vh] flex-col bg-[#0F0F0F] lg:h-full lg:overflow-hidden">
+          <div className="flex flex-col gap-3 border-b border-white/10 bg-[#0F0F0F]/90 px-6 pb-4 pt-6 backdrop-blur lg:flex-row lg:items-center lg:justify-between lg:px-12 shrink-0 z-10">
             <UserBadge
               user={user}
               loading={loadingUser}
@@ -328,13 +386,26 @@ export default function Studio() {
             </div>
           </div>
 
-          <div className="flex flex-1 items-center justify-center px-6 py-10 lg:px-12">
-            <div className="w-full max-w-5xl">
+          <div className="flex flex-1 flex-col items-center justify-start py-20 lg:overflow-y-auto w-full scrollbar-hidden">
+            <div className="w-full max-w-6xl px-6 lg:px-12">
               {videoPreviewUrl ? (
-                <PreviewWindow
-                  settings={settings}
-                  videoPreviewUrl={videoPreviewUrl}
-                />
+                <div className="flex flex-col gap-6">
+                  <PreviewWindow
+                    settings={settings}
+                    videoPreviewUrl={videoPreviewUrl}
+                    videoRef={videoRef}
+                    onTimeUpdate={onTimeUpdate}
+                    onLoadedMetadata={onLoadedMetadata}
+                    onPlay={onPlay}
+                    onPause={onPause}
+                  />
+                  {/* Status moved here, below the video */}
+                  {(status === 'processing' || status === 'uploading' || message) && (
+                     <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-6 shadow-inner">
+                      {renderStatusContent()}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="rounded-[30px] border border-dashed border-white/15 bg-white/5 p-8 text-center shadow-[0_25px_90px_rgba(0,0,0,0.55)] backdrop-blur-xl">
                   <UploadDropzone
@@ -346,26 +417,82 @@ export default function Studio() {
             </div>
           </div>
 
-          <div className="border-t border-white/10 bg-black/30 px-8 py-8 backdrop-blur lg:px-12">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between max-w-5xl mx-auto">
-              <div className="ui-label text-xs">
-                Playback Toolbar
-              </div>
-              {videoPreviewUrl && (
-                <button
-                  onClick={handleRemoveVideo}
-                  className="inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-transparent px-4 py-2 text-sm font-medium text-red-300 transition hover:border-red-400 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Remove Video
-                </button>
-              )}
-            </div>
+          {/* New Sticky Playback Toolbar */}
+          {videoPreviewUrl && (
+            <div className="sticky bottom-0 z-50 border-t border-white/10 bg-[#0F0F0F]/80 backdrop-blur-md transition-all shrink-0">
+              <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-4 px-4 lg:px-12">
+                
+                {/* Left: Play/Pause & Time */}
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={togglePlay}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:scale-95 transition"
+                  >
+                    {isPlaying ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
+                  </button>
+                  
+                  <span className="hidden w-24 text-xs font-medium font-mono text-zinc-400 sm:block">
+                    {formatTime(currentTime)} <span className="text-zinc-600">/</span> {formatTime(duration)}
+                  </span>
+                </div>
 
-            <div className="mt-4 rounded-2xl border border-white/10 bg-[#1A1A1A] p-6 shadow-inner">
-              {renderStatusContent()}
+                {/* Center: Seek Bar (High Density) */}
+                <div className="flex flex-1 items-center px-4">
+                   <div className="group relative flex h-6 w-full items-center cursor-pointer">
+                      {/* Track Background */}
+                      <div className="absolute h-1 w-full rounded-full bg-white/10 group-hover:h-1.5 transition-all" />
+                      
+                      {/* Progress Fill */}
+                      <div 
+                        className="absolute h-1 rounded-full bg-gradient-to-r from-[#f5c249] to-[#ffb016] group-hover:h-1.5 transition-all"
+                        style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                      />
+                      
+                      {/* The Input Range (Invisible but clickable) */}
+                      <input
+                        type="range"
+                        min={0}
+                        max={duration || 100}
+                        step={0.1}
+                        value={currentTime}
+                        onChange={handleSeek}
+                        className="absolute h-full w-full opacity-0 cursor-pointer"
+                      />
+                   </div>
+                </div>
+
+                {/* Right: Actions */}
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <button 
+                    onClick={toggleMute} 
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:bg-white/5 hover:text-white transition hidden sm:flex"
+                  >
+                    {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  </button>
+
+                  <div className="h-4 w-px bg-white/10 hidden sm:block" />
+
+                  <button
+                    onClick={handleRemoveVideo}
+                    className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition"
+                    title="Remove Video"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Remove</span>
+                  </button>
+                </div>
+
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Fallback space if no video (maintains layout structure) */}
+          {!videoPreviewUrl && (
+             <div className="h-14 border-t border-white/5 bg-[#0F0F0F]/50 flex items-center justify-center text-xs text-zinc-600">
+               Ready to upload
+             </div>
+          )}
+          
         </section>
       </div>
     </div>
