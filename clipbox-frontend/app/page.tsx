@@ -15,5 +15,5 @@ export default function HomePage() {
     }
   }, [router]);
 
-  return    <main><LandingPage />;</main>
+    return <main><LandingPage /></main>
 }

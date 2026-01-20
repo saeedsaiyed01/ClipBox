@@ -157,10 +157,11 @@ export default function LandingPage() {
                   group relative inline-flex items-center justify-center overflow-hidden rounded-full 
                   transition-all duration-500 font-medium 
                   bg-[#f5c249] text-black h-10 px-7 text-sm hover:bg-[#eeb12d] shadow-[0_0_20px_-5px_rgba(245,194,73,0.3)]
+                  hover:shadow-[0_0_35px_-5px_rgba(245,194,73,0.5)] hover:scale-105 active:scale-95
                 `}
               >
                  <span className={`${scrolled ? "mr-0" : "mr-2"} tracking-wide font-bold`}>
-                   {scrolled ? "Login" : "Login"}
+                   {scrolled ? "Try now" : "Try now"}
                  </span>
                  <Arrowright className={`transition-transform duration-300 ${scrolled ? "hidden" : "w-3.5 h-3.5 group-hover:translate-x-1"}`} />
               </button>
@@ -173,12 +174,9 @@ export default function LandingPage() {
       <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center relative z-10">
           
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-8 hover:bg-amber-500/20 transition-colors cursor-default">
-             <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
-             v2.0 Now Available
-          </div>
+      
 
-          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-medium mb-8 tracking-tight text-white serif-text">
+          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-medium mb-8 tracking-tight text-white serif-text mt-20">
             Transform Your Videos with <br className="hidden sm:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-orange-500">
               Professional Effects
@@ -319,53 +317,36 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-12 px-4 sm:px-6 lg:px-8 bg-black">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div className="col-span-1 md:col-span-1">
-              <div className="flex items-center space-x-2 mb-6">
-                <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg flex items-center justify-center">
-                  <span className="text-black font-bold text-lg">C</span>
+      <footer className="border-t border-white/5 py-16 px-4 sm:px-6 lg:px-8 bg-[#020202] relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute bottom-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-amber-500/[0.03] blur-[120px] rounded-full pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex flex-col items-center justify-center text-center">
+            {/* Logo */}
+            <div className="flex items-center gap-3 mb-6 group cursor-default">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/10 group-hover:scale-105 transition-transform duration-300">
+                  <span className="text-black font-bold text-xl">C</span>
                 </div>
-                <span className="text-xl font-bold tracking-tight">ClipBox</span>
-              </div>
-              <p className="text-zinc-500 text-sm leading-relaxed">
-                The modern toolkit for digital creators. Design, edit, and export with style.
-              </p>
+                <span className="text-2xl font-bold tracking-tight text-white group-hover:text-zinc-200 transition-colors">ClipBox</span>
             </div>
             
-            <div>
-              <h4 className="font-semibold text-white mb-6">Product</h4>
-              <ul className="space-y-3 text-zinc-500 text-sm">
-                <li><a href="#features" className="hover:text-amber-400 transition-colors">Features</a></li>
-                <li><a href="#how-it-works" className="hover:text-amber-400 transition-colors">How it Works</a></li>
-                <li><a href="/studio" className="hover:text-amber-400 transition-colors">Studio</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-white mb-6">Resources</h4>
-              <ul className="space-y-3 text-zinc-500 text-sm">
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-amber-400 transition-colors">API Reference</a></li>
-                <li><a href="https://github.com" className="hover:text-amber-400 transition-colors flex items-center space-x-1">
-                  <span>GitHub</span>
-                </a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-white mb-6">Legal</h4>
-              <ul className="space-y-3 text-zinc-500 text-sm">
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Terms</a></li>
-              </ul>
-            </div>
+            {/* Tagline */}
+            <p className="text-zinc-500 text-base max-w-md mb-10 leading-relaxed font-light">
+              The modern toolkit for digital creators. <br/>
+              Design, edit, and export with style.
+            </p>
           </div>
           
-          <div className="border-t border-white/5 mt-16 pt-8 flex flex-col md:flex-row items-center justify-between text-zinc-600 text-sm">
-            <p>&copy; 2024 ClipBox. All rights reserved.</p>
-            <p>Crafted in the dark.</p>
+          {/* Bottom Bar */}
+          <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-zinc-600 text-sm">
+            <p className="font-medium">&copy; {new Date().getFullYear()} ClipBox. All rights reserved.</p>
+            <div className="flex items-center gap-6">
+               <a href="#" className="hover:text-zinc-400 transition-colors">Privacy Policy</a>
+               <a href="#" className="hover:text-zinc-400 transition-colors">Terms of Service</a>
+               <span className="w-1 h-1 rounded-full bg-zinc-800"></span>
+               <p className="text-zinc-700">Crafted in the dark.</p>
+            </div>
           </div>
         </div>
       </footer>

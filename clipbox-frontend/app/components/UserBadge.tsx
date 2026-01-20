@@ -51,7 +51,7 @@ export default function UserBadge({
       <button
         onClick={onSignIn}
         className={clsx(
-          "inline-flex items-center rounded-full border border-white/10 bg-zinc-900/80 text-white transition hover:border-amber-400/80 hover:bg-zinc-800",
+          "inline-flex items-center rounded-full border border-white/10 bg-zinc-900/80 text-white transition-all duration-300 hover:border-amber-400/80 hover:bg-zinc-800 hover:scale-105 active:scale-95",
           padding,
           gap,
           className
@@ -66,7 +66,7 @@ export default function UserBadge({
           <UserIcon className="h-4 w-4" />
         </div>
         <div className="flex items-center gap-2">
-          <span className={clsx("font-semibold tracking-tight", nameSize)}>Sign in</span>
+          <span className={clsx("font-semibold tracking-tight", nameSize)}>Try now</span>
           <ArrowUpRight className="h-4 w-4 text-amber-300" />
         </div>
       </button>
