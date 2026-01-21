@@ -75,14 +75,16 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   logger.error('Unhandled error', { error: err.message, stack: err.stack, url: req.url });
   errorHandler(err, req, res, next);
 });
-if (process.env.NODE_ENV === "production") {
-  import("./worker")
+if (process.env.NODE_ENV === "production" && process.env.DISABLE_INTEGRATED_WORKER !== "true") {
+  import("./worker.js")
     .then(() => {
       console.log("Worker started inside web service (free-tier mode)");
     })
     .catch((err) => {
       console.error("Failed to start worker", err);
     });
+} else if (process.env.DISABLE_INTEGRATED_WORKER === "true") {
+    console.log("Integrated worker disabled. Expecting external worker service.");
 }
 
 app.listen(PORT, '0.0.0.0',() => {
