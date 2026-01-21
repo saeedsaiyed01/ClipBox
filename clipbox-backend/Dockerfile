@@ -1,9 +1,9 @@
-FROM node:18-alpine
+FROM node:18
 
 WORKDIR /app
 
-# Install ffmpeg and build dependencies for canvas
-RUN apk add --no-cache ffmpeg python3 make g++ cairo-dev pango-dev jpeg-dev giflib-dev
+# Install ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg
 
 # Copy package files
 COPY package*.json ./
