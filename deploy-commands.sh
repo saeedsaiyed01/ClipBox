@@ -35,7 +35,6 @@ echo "Creating frontend environment file..."
 cat > clipbox-frontend/.env.production << EOF
 # Backend API URL (update after backend deployment)
 NEXT_PUBLIC_API_BASE_URL=https://your-app.railway.app/api
-NEXT_PUBLIC_BACKEND_URL=https://your-app.railway.app
 EOF
 
 # Initialize git if not already done

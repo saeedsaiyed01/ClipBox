@@ -103,50 +103,97 @@ export const processVideoJob = async (
   /* ----------------------------- BACKGROUND ----------------------------- */
 
   /* ----------------------------- INPUT INDICES --------------------------- */
-  const inputs: string[] = [inputPath];
-  const videoIdx = 0;
+  // CRITICAL FIX: When using background image, it should be FIRST input for -loop 1 to work
+  const inputs: string[] = [];
+  let videoIdx = -1;
   let bgImageIdx = -1;
   let maskIdx = -1;
 
   // Resolve Background Image Path
   let bgImagePath: string | null = null;
+
   if (background.type === 'image' && background.value) {
-    const relativePath = background.value.startsWith('/') 
-      ? background.value.slice(1) 
-      : background.value;
-    const fullPath = path.join(ROOT_DIR, relativePath);
-    if (fs.existsSync(fullPath)) {
-      bgImagePath = fullPath;
-      inputs.push(bgImagePath);
-      bgImageIdx = inputs.length - 1;
-    } else {
-      logger.warn(`Background image not found: ${fullPath}`);
+    const filename = path.basename(background.value);
+    
+    const searchPaths = [
+      ...(path.isAbsolute(background.value) ? [background.value] : []),
+      path.join(UPLOADS_DIR, filename),
+      path.join(PUBLIC_DIR, filename),
+      path.resolve(ROOT_DIR, background.value.replace(/^[\/\\]/, '')),
+      path.resolve(ROOT_DIR, 'clipbox-backend', 'uploads', filename),
+      path.resolve(ROOT_DIR, 'clipbox-backend', 'public', filename),
+    ];
+
+    logger.info(`[Process-${job.id}] Resolving image: ${background.value}`);
+    logger.info(`[Process-${job.id}] Search paths: ${JSON.stringify(searchPaths)}`);
+
+    for (const p of searchPaths) {
+      if (fs.existsSync(p)) {
+        const stat = fs.statSync(p);
+        if (stat.isFile()) {
+            bgImagePath = p;
+            break;
+        }
+      }
     }
+
+    if (bgImagePath) {
+      logger.info(`[Process-${job.id}] SUCCESS: Found background image at: ${bgImagePath}`);
+      // Add background image FIRST when using -loop 1
+      inputs.push(bgImagePath);
+      bgImageIdx = 0;
+      inputs.push(inputPath);
+      videoIdx = 1;
+    } else {
+      logger.error(`[Process-${job.id}] FAILED: Could not find background image ${filename}`);
+      logger.error(`[Process-${job.id}] Checked: ${searchPaths.join(', ')}`);
+      
+      try {
+        if (fs.existsSync(UPLOADS_DIR)) {
+            const files = fs.readdirSync(UPLOADS_DIR);
+            logger.info(`[Process-${job.id}] Files in UPLOADS_DIR: ${files.slice(0, 10).join(', ')}...`);
+        } else {
+            logger.warn(`[Process-${job.id}] UPLOADS_DIR does not exist: ${UPLOADS_DIR}`);
+        }
+      } catch (e) {
+          logger.error(`[Process-${job.id}] Error listing uploads: ${e}`);
+      }
+      
+      // Fallback: just add video
+      inputs.push(inputPath);
+      videoIdx = 0;
+    }
+  } else {
+    // No background image, video is first
+    inputs.push(inputPath);
+    videoIdx = 0;
   }
 
   /* ----------------------------- BACKGROUND ----------------------------- */
 
   if (bgImageIdx !== -1) {
-    // Scale and crop image to cover the canvas
+    // CRITICAL FIX: Use setpts to sync the looped image with video timeline
+    // and scale with force_original_aspect_ratio to cover canvas
     filters.push(
-      `[${bgImageIdx}:v]scale=${canvasW}:${canvasH}:force_original_aspect_ratio=increase,crop=${canvasW}:${canvasH}[bg]`
+      `[${bgImageIdx}:v]scale=${canvasW}:${canvasH}:force_original_aspect_ratio=increase,crop=${canvasW}:${canvasH},setsar=1[bg]`
     );
   } else if (background.type === 'solid') {
-    filters.push(`color=color=${background.value}:size=${canvasW}x${canvasH}[bg]`);
+    filters.push(`color=color=${background.value}:size=${canvasW}x${canvasH}:duration=30[bg]`);
   } else if (background.type === 'gradient') {
     const { c0, c1, horizontal } = parseGradient(background.value);
     const x1 = horizontal ? canvasW : 0;
     const y1 = horizontal ? 0 : canvasH;
     filters.push(
-      `gradients=s=${canvasW}x${canvasH}:c0=${c0}:c1=${c1}:x0=0:y0=0:x1=${x1}:y1=${y1}[bg]`
+      `gradients=s=${canvasW}x${canvasH}:c0=${c0}:c1=${c1}:x0=0:y0=0:x1=${x1}:y1=${y1}:duration=30[bg]`
     );
   } else {
-    filters.push(`color=color=black:size=${canvasW}x${canvasH}[bg]`);
+    logger.warn(`[Process-${job.id}] Using fallback black background because image was missing.`);
+    filters.push(`color=color=black:size=${canvasW}x${canvasH}:duration=30[bg]`);
   }
 
   /* ----------------------------- VIDEO SCALE ----------------------------- */
 
-  filters.push(`[${videoIdx}:v]scale=${scaleW}:${scaleH}[scaled]`);
+  filters.push(`[${videoIdx}:v]scale=${scaleW}:${scaleH},setsar=1[scaled]`);
 
   let outputStream = '[composite]';
   let maskPath: string | null = null;
@@ -158,43 +205,51 @@ export const processVideoJob = async (
     maskPath = path.join(PUBLIC_DIR, `mask-${job.id}.png`);
     generateRoundedMask(scaleW, scaleH, radius, maskPath);
     
-    // Add mask to inputs
     inputs.push(maskPath);
     maskIdx = inputs.length - 1;
 
     filters.push(`[scaled]format=yuva420p[video_alpha]`);
-    // Use dynamic mask index
     filters.push(`[${maskIdx}:v]scale=${scaleW}:${scaleH}[mask]`);
     filters.push(`[video_alpha][mask]alphamerge[rounded_video]`);
-    filters.push(`[bg][rounded_video]overlay=${overlayX}:${overlayY}[final]`);
+    filters.push(`[bg][rounded_video]overlay=${overlayX}:${overlayY}:shortest=1[final]`);
     outputStream = '[final]';
   } else {
-    filters.push(`[bg][scaled]overlay=${overlayX}:${overlayY}[composite]`);
+    filters.push(`[bg][scaled]overlay=${overlayX}:${overlayY}:shortest=1[composite]`);
   }
 
   /* ----------------------------- FFMPEG ----------------------------- */
 
   const ffmpegArgs: string[] = [];
   
-  // Add all inputs
-  inputs.forEach(input => {
-    ffmpegArgs.push('-i', input);
+  // CRITICAL FIX: Add inputs in correct order with proper flags
+  inputs.forEach((input, idx) => {
+    if (idx === bgImageIdx) {
+      // Background image needs -loop 1 and -framerate to match video
+      ffmpegArgs.push('-loop', '1', '-framerate', '30', '-i', input);
+    } else {
+      ffmpegArgs.push('-i', input);
+    }
   });
 
   ffmpegArgs.push(
     '-filter_complex', filters.join(';'),
     '-map', outputStream,
-    '-map', '0:a?', // Audio from video (input 0)
+    '-map', `${videoIdx}:a?`, // Audio from video (use correct index)
     '-c:v', 'libx264',
     '-preset', 'ultrafast',
     '-crf', '28',
     '-pix_fmt', 'yuv420p',
     '-c:a', 'copy',
     '-movflags', '+faststart',
-    '-t', '30',
-    '-y',
-    outputPath
+    '-t', '30'
   );
+
+  // CRITICAL FIX: Only add -shortest when we have a looped image
+  if (bgImageIdx !== -1) {
+    ffmpegArgs.push('-shortest');
+  }
+
+  ffmpegArgs.push('-y', outputPath);
 
   logger.info('FFmpeg command', {
     jobId: job.id,

@@ -463,7 +463,7 @@ export default function BackgroundPanel({ settings, setSettings, disabled }: Bac
               disabled={disabled}
             >
               <img
-                src={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}/api${settings.background.value}`}
+                src={`${(process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api').replace(/\/$/, '')}${settings.background.value}`}
                 alt="Custom"
                 className="w-full h-full object-cover"
               />
