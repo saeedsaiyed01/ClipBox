@@ -224,10 +224,12 @@ export default function LandingPage() {
                <div className="aspect-[16/9] w-full bg-zinc-900 relative">
                   <video
                     controls
+                    autoPlay
+                    muted
                     className="w-full h-full object-cover"
                     preload="metadata"
                   >
-                    <source src="/finalll.mp4" type="video/mp4" />
+                    <source src="/demo-part-2-clipbox.mp4" type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
                   

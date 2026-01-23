@@ -15,10 +15,34 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://clipbox.app'),
   title: "Clipbox",
   description: "Generate videos instantly",
   icons: {
     icon: "/favicon-new.png",
+  },
+  openGraph: {
+    title: "Clipbox - Generate videos instantly",
+    description: "ClipBox makes professional video processing simple. Upload your video, customize backgrounds and styling, and export stunning results.",
+    url: "https://clipbox.app",
+    siteName: "Clipbox",
+    images: [
+      {
+        url: "/og-clipbox.png",
+        width: 1200,
+        height: 630,
+        alt: "Clipbox Studio",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Clipbox",
+    description: "Generate videos instantly",
+    creator: "@clipbox",
+    images: ["/og-clipbox.png"],
   },
 };
 

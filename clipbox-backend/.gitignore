@@ -1,3 +1,5 @@
 /node_modules 
 public/output-*.mp4
 public/mask-*.png
+uploads/
+.env
