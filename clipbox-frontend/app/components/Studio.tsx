@@ -374,16 +374,16 @@ export default function Studio() {
         </aside>
 
         <section className="relative flex min-h-[60vh] flex-col bg-[#0F0F0F] lg:h-full lg:overflow-hidden">
-          <div className="flex flex-col gap-3 border-b border-white/10 bg-[#0F0F0F]/90 px-6 pb-4 pt-6 backdrop-blur lg:flex-row lg:items-center lg:justify-between lg:px-12 shrink-0 z-10">
+          <div className="flex flex-col gap-3 border-b border-white/10 bg-[#0F0F0F]/90 px-6 pb-4 pt-2 backdrop-blur lg:flex-row lg:items-center lg:justify-end lg:gap-6 lg:px-12 shrink-0 z-10">
+            <div className="flex items-center gap-3 self-start lg:self-auto">
+              {primaryAction}
+            </div>
             <UserBadge
               user={user}
               loading={loadingUser}
               onSignOut={handleLogout}
               onSignIn={handleLogin}
             />
-            <div className="flex items-center gap-3 self-start lg:self-auto">
-              {primaryAction}
-            </div>
           </div>
 
           <div className="flex flex-1 flex-col items-center justify-start py-20 lg:overflow-y-auto w-full scrollbar-hidden">
@@ -398,7 +398,80 @@ export default function Studio() {
                     onLoadedMetadata={onLoadedMetadata}
                     onPlay={onPlay}
                     onPause={onPause}
-                  />
+                  >
+                    {/* Professional Video Controls */}
+                    <div className="w-full max-w-5xl">
+                      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/95 px-6 py-4 shadow-[0_10px_40px_rgba(0,0,0,0.6)] backdrop-blur-sm">
+                        
+                        {/* Progress Bar */}
+                        <div className="group relative flex h-2 w-full items-center cursor-pointer">
+                            {/* Track Background */}
+                            <div className="absolute h-1 w-full rounded-full bg-white/10" />
+                            
+                            {/* Progress Fill */}
+                            <div 
+                              className="absolute h-1 rounded-full bg-gradient-to-r from-[#f5c249] to-[#ffb016]"
+                              style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                            />
+                            
+                            {/* Progress Handle */}
+                            <div 
+                               className="absolute h-3 w-3 rounded-full bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                               style={{ left: `${duration ? (currentTime / duration) * 100 : 0}%`, transform: 'translateX(-50%)' }}
+                            />
+                            
+                            {/* The Input Range (Invisible but clickable) */}
+                            <input
+                              type="range"
+                              min={0}
+                              max={duration || 100}
+                              step={0.1}
+                              value={currentTime}
+                              onChange={handleSeek}
+                              className="absolute h-full w-full opacity-0 cursor-pointer"
+                            />
+                        </div>
+
+                        {/* Control Bar */}
+                        <div className="flex items-center justify-between gap-4">
+                          
+                          {/* Left Side: Play + Time */}
+                          <div className="flex items-center gap-4">
+                            <button 
+                              onClick={togglePlay}
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white transition hover:bg-white/15 active:scale-95"
+                            >
+                              {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current ml-0.5" />}
+                            </button>
+                            
+                            <span className="text-sm font-medium font-mono text-zinc-400 tabular-nums">
+                              {formatTime(currentTime)} <span className="text-zinc-600 mx-1">/</span> {formatTime(duration)}
+                            </span>
+                          </div>
+
+                          {/* Right Side: Actions */}
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={toggleMute} 
+                              className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-white/5 hover:text-white transition"
+                              title={isMuted ? "Unmute" : "Mute"}
+                            >
+                              {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                            </button>
+
+                            <button
+                              onClick={handleRemoveVideo}
+                              className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-500/10 hover:text-red-400 transition"
+                              title="Remove Video"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+
+                        </div>
+                      </div>
+                    </div>
+                  </PreviewWindow>
                   {/* Status moved here, below the video */}
                   {(status === 'processing' || status === 'uploading' || message) && (
                      <div className="rounded-2xl border border-white/10 bg-[#1A1A1A] p-6 shadow-inner">
@@ -417,73 +490,11 @@ export default function Studio() {
             </div>
           </div>
 
-          {/* New Sticky Playback Toolbar */}
-          {videoPreviewUrl && (
-            <div className="sticky bottom-0 z-50 border-t border-white/10 bg-[#0F0F0F]/80 backdrop-blur-md transition-all shrink-0">
-              <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-4 px-4 lg:px-12">
-                
-                {/* Left: Play/Pause & Time */}
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={togglePlay}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:scale-95 transition"
-                  >
-                    {isPlaying ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
-                  </button>
-                  
-                  <span className="hidden w-24 text-xs font-medium font-mono text-zinc-400 sm:block">
-                    {formatTime(currentTime)} <span className="text-zinc-600">/</span> {formatTime(duration)}
-                  </span>
-                </div>
-
-                {/* Center: Seek Bar (High Density) */}
-                <div className="flex flex-1 items-center px-4">
-                   <div className="group relative flex h-6 w-full items-center cursor-pointer">
-                      {/* Track Background */}
-                      <div className="absolute h-1 w-full rounded-full bg-white/10 group-hover:h-1.5 transition-all" />
-                      
-                      {/* Progress Fill */}
-                      <div 
-                        className="absolute h-1 rounded-full bg-gradient-to-r from-[#f5c249] to-[#ffb016] group-hover:h-1.5 transition-all"
-                        style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-                      />
-                      
-                      {/* The Input Range (Invisible but clickable) */}
-                      <input
-                        type="range"
-                        min={0}
-                        max={duration || 100}
-                        step={0.1}
-                        value={currentTime}
-                        onChange={handleSeek}
-                        className="absolute h-full w-full opacity-0 cursor-pointer"
-                      />
-                   </div>
-                </div>
-
-                {/* Right: Actions */}
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <button 
-                    onClick={toggleMute} 
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:bg-white/5 hover:text-white transition hidden sm:flex"
-                  >
-                    {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                  </button>
-
-                  <div className="h-4 w-px bg-white/10 hidden sm:block" />
-
-                  <button
-                    onClick={handleRemoveVideo}
-                    className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition"
-                    title="Remove Video"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Remove</span>
-                  </button>
-                </div>
-
-              </div>
-            </div>
+          {/* Fallback space if no video (maintains layout structure) */}
+          {!videoPreviewUrl && (
+             <div className="h-14 border-t border-white/5 bg-[#0F0F0F]/50 flex items-center justify-center text-xs text-zinc-600">
+               Ready to upload
+             </div>
           )}
 
           {/* Fallback space if no video (maintains layout structure) */}

@@ -12,6 +12,7 @@ export default function PreviewWindow({
   onLoadedMetadata,
   onPlay,
   onPause,
+  children,
 }: {
   settings: StudioSettings;
   videoPreviewUrl: string;
@@ -20,6 +21,7 @@ export default function PreviewWindow({
   onLoadedMetadata?: () => void;
   onPlay?: () => void;
   onPause?: () => void;
+  children?: React.ReactNode;
 }) {
   const { background, aspectRatio, borderRadius, zoom } = settings;
   const useImageBackground = background.type === "image" && background.value;
@@ -31,7 +33,7 @@ export default function PreviewWindow({
 
   return (
     <div
-      className="group relative flex w-full min-h-[400px] items-center justify-center overflow-hidden border border-white/10 bg-gradient-to-br from-[#101013] via-[#050506] to-[#000000] p-8 shadow-2xl"
+      className="group relative flex flex-col mt-[-50px] gap-8 w-full min-h-[400px] items-center justify-center overflow-hidden border border-white/10 bg-gradient-to-br from-[#101013] via-[#050506] to-[#000000] p-8 shadow-2xl"
       style={{
         borderRadius: `${FRAME_RADIUS}px`,
       }}
@@ -100,7 +102,8 @@ export default function PreviewWindow({
             />
           </div>
         </div>
-      </div>
+    </div>
+      {children}
     </div>
   );
 }
