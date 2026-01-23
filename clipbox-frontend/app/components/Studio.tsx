@@ -497,12 +497,7 @@ export default function Studio() {
              </div>
           )}
 
-          {/* Fallback space if no video (maintains layout structure) */}
-          {!videoPreviewUrl && (
-             <div className="h-14 border-t border-white/5 bg-[#0F0F0F]/50 flex items-center justify-center text-xs text-zinc-600">
-               Ready to upload
-             </div>
-          )}
+
           
         </section>
       </div>
